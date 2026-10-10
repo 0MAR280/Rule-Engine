@@ -2464,6 +2464,7 @@ local ENUMS = require(Modules.Data.ENUMS)
 local mod = {}
 
 -- Types
+-- A normal path, can a string or an array of strings
 export type Path = string | { string }
 
 -- Logger
@@ -2498,40 +2499,80 @@ export type Signal = {
 }
 
 -- Rule Engine Types
-export type ParamOpType = ENUMS.ParamOpTypeValue
-export type ConditionOpType = ENUMS.ConditionOpTypeValue
-export type RewardOpType = ENUMS.RewardOpTypeValue
-export type ContextType = ENUMS.ContextTypeValue
+-- DataPath | CachePath | Value | Now — Type of operation on the condition params
+export type ParamOpType = ENUMS.ParamOpTypeValue -- Custom Enum
+
+-- == | ~= | > | >= | < | <= — Equality Operations
+export type ConditionOpType = ENUMS.ConditionOpTypeValue -- Custom Enum
+
+-- Increment | Decrement | Set | FireSignal — The Reward data manipulation operation type
+export type RewardOpType = ENUMS.RewardOpTypeValue -- Custom Enum
+
+-- Server | Client | Both — What environment this rule can be evaluated on
+export type ContextType = ENUMS.ContextTypeValue -- Custom Enum
+
+-- A table that contains the evaluation and reward data
+export type RuleData = {
+	-- Where this rule must be evaluated — Server, Client or Both
+	context: ContextType,
+	-- A table of conditions—or a function—to evluate.
+	conditions: ({ Condition } | ((Player) -> (boolean, string?)))?,
+	-- A table of rewards—or a function—to reward if the conditions passed.
+	rewards: ({ Reward } | ((Player) -> (boolean, string?)))?,
+}
+
+-- any (2, 4, or "Sowrd", can be anything) or a table that has "param" entry
+export type Value = any | { param: Param }
+
+-- A paramter is usually used to write/read user data with Data/Cache Services
 export type Param = {
 	type: ParamOpType,
 	path: Path?,
 	value: any?,
 }
-export type Value = any | { param: Param }
+
+-- A table to compare 2 values against each other
 export type Condition = {
-	name: string?,
-	value1: any,
-	value2: any,
+	name: string?, -- Condition name to use in the logs
+
+	--[[
+        If params were provided instead of normal values, the engine will resolve
+        the values before comparsion operation.
+    ]]
+	value1: Value,
+	value2: Value,
+
 	opType: ConditionOpType,
 	onFalse: any?, -- Optional value to return or action to take if the condition fails
 }
+
+-- A table that contains the reward data
 export type Reward = {
-	name: string?,
+	name: string?, -- Reward name to use in the logs
+
+	--[[
+        -- Increment | Decrement | Set for quick data manipulation
+        -- FireSignal for custom rewards (Giving a tool for example)
+    ]]
 	opType: RewardOpType,
+
+	-- The value to send, or the param to resolve into a value.
 	value: Value,
+
+	--[[
+        Path to the signal to fire.
+        A system must be listening to this signal to handle giving rewards.
+    ]]
 	path: Path?,
+
+	-- An array of optional extra paramters to send to the receiving end
 	params: { any }?,
+
+	--[[
+        Wether to use table.unpack(params) to send as a tuble,
+        or just send it as an array to the receiving end
+    ]]
 	unpackParams: boolean?,
-}
-export type RuleData = {
-	context: ContextType,
-	conditions: ({ Condition } | ((Player) -> (boolean, string?)))?,
-	rewards: ({ Reward } | ((Player) -> (boolean, string?)))?,
-}
-export type RuleEngine = {
-	checkAndApplyRule: (player: Player, rule: RuleData, payload: { [string]: any }?) -> (boolean, string?),
-	applyRewards: (player: Player, rule: RuleData) -> (boolean, string?),
-	checkRules: (player: Player, rule: RuleData, payload: { [string]: any }?) -> (boolean, string?),
 }
 
 -- Rewards
@@ -10856,7 +10897,7 @@ local Types = require(Modules.Types.Types)
 
 -- Classes
 local Classes = ReplicatedStorage.Shared.Classes
-local Logger = require(Classes.Logger.Class).new(`DataService`)
+local Logger = require(Classes.Logger.Class).new(`RewardService`)
 
 -- Variables
 local startPosition = Vector3.new(0, 0.5, -15)

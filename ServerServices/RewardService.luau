@@ -11,7 +11,7 @@ local Types = require(Modules.Types.Types)
 
 -- Classes
 local Classes = ReplicatedStorage.Shared.Classes
-local Logger = require(Classes.Logger.Class).new(`DataService`)
+local Logger = require(Classes.Logger.Class).new(`RewardService`)
 
 -- Variables
 local startPosition = Vector3.new(0, 0.5, -15)
