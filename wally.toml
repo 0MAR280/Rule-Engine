@@ -1,0 +1,9 @@
+[package]
+name = "pc/rule-engine"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[dependencies]
+Signal = "si-senortn/signal@0.1.0"
+Sift = "csqrl/sift@0.0.11"
