@@ -17,11 +17,11 @@ local currentContext: ContextType = RunService:IsServer() and ENUMS.ContextTypes
 -- Function
 --[=[
 	Ensures that the rule is being evaluated in the correct context (Server, Client, or Both).
-	@param ruleContext The context specified in the rule (Server, Client, Both)
-	@return Whether the context is valid
+	@param ruleContext ContextType - The context specified in the rule (Server, Client, Both)
+	@return boolean - Whether the context is valid
 ]=]
 local function checkContext(ruleContext: ContextType): boolean
-	if typeof(ruleContext) ~= "string" then
+	if ruleContext == nil then
 		return true
 	end
 

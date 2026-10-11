@@ -22,15 +22,14 @@ type Reward = Types.Reward
 -- Function
 --[=[
 	Applies a single reward, resolving a dynamic value and dispatching to its operation handler.
-	@param player The player receiving the reward
-	@param reward The reward data containing the operation, value, and handler parameters
-	@return Whether the reward handler ran successfully, and an optional error message
+	@param player Player - The player receiving the reward
+	@param reward Reward - The reward data containing the operation, value, and handler parameters
+	@return boolean - Whether every reward was applied successfully
+	@return string? - The first error if any (In case of failure only)
 ]=]
 local function applyReward(player: Player, reward: Reward): (boolean, string?)
-	local fn = `applyReward`
-
 	if typeof(reward) ~= "table" then
-		return false, `{fn}: Invalid reward format`
+		return false, `applyReward: Invalid reward format`
 	end
 
 	reward = Sift.Dictionary.copyDeep(reward)
@@ -42,19 +41,30 @@ local function applyReward(player: Player, reward: Reward): (boolean, string?)
 	end
 
 	if not RewardCases[opType] then
-		local msg = `{fn}: Unknown operation type {opType} for reward {reward.name}`
+		local msg = `Unknown operation type {opType} for reward {reward.name}`
 		Logger:warn(msg)
+
 		return false, msg
 	end
 
-	local success, err = pcall(RewardCases[opType], player, reward)
+	local pcallSuccess, rewardSuccess, err = pcall(RewardCases[opType], player, reward)
 
 	table.clear(reward)
 
-	if not success then
-		local msg = `{fn}: Failed to apply reward {tostring(opType)}: {tostring(err)}`
-		Logger:warn(msg)
-		return false, msg
+	if not pcallSuccess then
+		local msg1 = `Failed to apply reward with operation: {tostring(opType)}!`
+		local msg2 = `A runtime error: {tostring(err)}`
+		Logger:warn(`{msg1}\n{msg2}`)
+
+		return false, msg2
+	end
+
+	if not rewardSuccess then
+		local msg1 = `Failed to apply reward with operation: {tostring(opType)}!`
+		local msg2 = `A mal reward format: {tostring(err)}`
+		Logger:warn(`{msg1}\n{msg2}`)
+
+		return false, msg2
 	end
 
 	return true

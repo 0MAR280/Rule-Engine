@@ -55,7 +55,7 @@ return {
 	},
 
 	attributes = {
-		name = `Currency Trade`,
+		name = `FireSignal`,
 		description = `Get a Sword for {coinsCost} Coins & {pointsCost} Points`,
 		color = Color3.fromRGB(0, 255, 150),
 	},

@@ -18,10 +18,10 @@ type Condition = Types.Condition
 -- Function
 --[=[
 	Evaluates a single condition, resolving dynamic values and applying the configured operator.
-	@param player The player to evaluate the condition against
-	@param condition The condition data containing values and an operator
-	@param payload Optional event payload for dynamic values
-	@return Whether the condition is satisfied
+	@param player Player - The player to evaluate the condition against
+	@param condition { Condition } - The condition data containing values and an operator
+	@param payload { [string]: any } - Optional event payload for dynamic values
+	@return boolean - Whether the condition is satisfied
 ]=]
 local function solveCondition(player: Player, condition: Condition, payload: { [string]: any }?): boolean
 	if condition == nil then

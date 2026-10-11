@@ -141,4 +141,42 @@ function Shared.fireSignal(rewardName: string, path: Path, signalParams: { any }
 	}
 end
 
+--[=[
+	Builds the reward that sets player data in the selected currency.
+	@param currency string - The currency to set
+	@param value number - The value to set
+	@param path Path - The signal path relative to CommsHub
+	@return Reward - The set reward
+]=]
+function Shared.set(currency: string, value: number, path: Path): Reward
+	return {
+		name = "Set",
+		path = path,
+		value = value,
+		opType = ENUMS.RewardOpTypes.Set,
+		params = {
+			userDataPaths[currency],
+		},
+	}
+end
+
+--[=[
+	Builds the reward that sets cache data in the selected currency.
+	@param currency string - The currency to set
+	@param value number - The value to set
+	@param path Path - The signal path relative to CommsHub
+	@return Reward - The set reward
+]=]
+function Shared.cacheSet(currency: string, value: number, path: Path): Reward
+	return {
+		name = "Set",
+		path = path,
+		value = value,
+		opType = ENUMS.RewardOpTypes.Set,
+		params = {
+			userCachePaths[currency],
+		},
+	}
+end
+
 return Shared

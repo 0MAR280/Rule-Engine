@@ -2,6 +2,14 @@
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+-- Packages
+local Packages = ReplicatedStorage.Packages
+local Sift = require(Packages.Sift)
+
+-- Libraries
+local Libraries = ReplicatedStorage.Shared.Libraries
+local TypeChecker = require(Libraries.TypeChecker)
+
 -- Modules
 local Modules = ReplicatedStorage.Shared.Modules
 local SignalManager = require(Modules.Core.SignalManager)
@@ -24,10 +32,10 @@ type Reward = Types.Reward
 	are passed to the signal as a tuple when unpackParams is true, or as a table otherwise.
 	@param player Player - The player receiving the reward
 	@param reward Reward - The reward configuration containing the signal path, decrement amount, and parameters
-	@return nil - Invalid paths or parameters are reported through the logger.
+	@return boolean - Wether the operation was successfull
+	@return string? - Error message in case of failure
 ]=]
-local function setReward(player: Player, reward: Reward): ()
-	local fn = `Set-RewardCase`
+local function setReward(player: Player, reward: Reward): (boolean, string?)
 	local signalPath = reward.path
 
 	if signalPath then
@@ -37,15 +45,26 @@ local function setReward(player: Player, reward: Reward): ()
 			local params = reward.params
 
 			if type(params) ~= "table" then
-				Logger:warn(`{fn}: Expected reward.params to be an array!`)
-				return
+				local msg = `Expected reward.params to be an array, got: {TypeChecker.getType(params)}!`
+				Logger:warn(msg)
+
+				return false, msg
+			end
+
+			if next(params) ~= nil and not Sift.Array.isArray(params) then
+				local msg = `Expected reward.params to be an array, got: a "dictionary"!`
+				Logger:warn(msg)
+
+				return false, msg
 			end
 
 			local valuePath = params[1]
 
-			if not fnIsValidPath(valuePath) then
-				Logger:warn(`{fn}: Expected at least one path paramter in reward.params for the target value!`)
-				return
+			if valuePath == nil or not fnIsValidPath(valuePath) then
+				local msg = `Expected at least one path Parameter in reward.params for the target value!`
+				Logger:warn(msg)
+
+				return false, msg
 			end
 
 			table.remove(params, 1)
@@ -56,11 +75,19 @@ local function setReward(player: Player, reward: Reward): ()
 			else
 				SignalManager.fireSignal(signal, player, valuePath, newValue, params)
 			end
+
+			return true, nil
 		else
-			Logger:warn(`{fn}: Provided signal path is invalid!`)
+			local msg = `Provided signal path is invalid!`
+			Logger:warn(msg)
+
+			return false, msg
 		end
 	else
-		Logger:warn(`{fn}: Signal path is nil!`)
+		local msg = `Signal path is nil!`
+		Logger:warn(msg)
+
+		return false, msg
 	end
 end
 

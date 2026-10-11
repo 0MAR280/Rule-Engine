@@ -45,6 +45,13 @@ export type Signal = {
 }
 
 -- Rule Engine Types
+export type RuleEngine = {
+	excuteRule: (player: Player, rule: RuleData) -> (boolean, boolean, boolean?, string?),
+	applyRollback: (player: Player, rule: RuleData) -> (boolean, string?, number?),
+	applyRewards: (player: Player, rule: RuleData) -> (boolean, string?, number?),
+	checkConditions: (player: Player, rule: RuleData) -> (boolean, string?),
+}
+
 -- DataPath | CachePath | Value | Now — Type of operation on the condition params
 export type ParamOpType = ENUMS.ParamOpTypeValue -- Custom Enum
 
@@ -65,12 +72,33 @@ export type RuleData = {
 	conditions: ({ Condition } | ((Player) -> (boolean, string?)))?,
 	-- A table of rewards—or a function—to reward if the conditions passed.
 	rewards: ({ Reward } | ((Player) -> (boolean, string?)))?,
+
+	-- A table of rewards-or a function-to reverse the applied rewards in case of failure
+	rollbackRewards: ({ Reward } | ((Player) -> (boolean, string?)))?,
 }
 
 -- any (2, 4, or "Sowrd", can be anything) or a table that has "param" entry
-export type Value = any | { param: Param }
+export type Value = any | {
+	-- A custom param to resolve into a value
+	param: Param,
 
--- A paramter is usually used to write/read user data with Data/Cache Services
+	-- Optional callback that expects and manipulates the resolved Parameter value
+	callBack: (...any) -> any?,
+
+	--[[
+        Wether to use table.unpack(params) to send as a tuble to the callback,
+        or just send it as an array to the callback
+    ]]
+	unpackParams: boolean?,
+
+	--[[
+		If the callback returns an array, and this is set.
+		The condition value will resolve to the matching array index
+	]]
+	returnIndex: number?,
+}
+
+-- A parameter is usually used to write/read user data with Data/Cache Services
 export type Param = {
 	type: ParamOpType,
 	path: Path?,
@@ -79,7 +107,7 @@ export type Param = {
 
 -- A table to compare 2 values against each other
 export type Condition = {
-	name: string?, -- Condition name to use in the logs
+	name: string, -- Condition name to use in the logs
 
 	--[[
         If params were provided instead of normal values, the engine will resolve
@@ -94,7 +122,7 @@ export type Condition = {
 
 -- A table that contains the reward data
 export type Reward = {
-	name: string?, -- Reward name to use in the logs
+	name: string, -- Reward name to use in the logs
 
 	--[[
         -- Increment | Decrement | Set for quick data manipulation
@@ -111,7 +139,7 @@ export type Reward = {
     ]]
 	path: Path?,
 
-	-- An array of optional extra paramters to send to the receiving end
+	-- An array of optional extra parameters to send to the receiving end
 	params: { any }?,
 
 	--[[

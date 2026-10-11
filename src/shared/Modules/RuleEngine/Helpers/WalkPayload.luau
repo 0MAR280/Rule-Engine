@@ -12,9 +12,9 @@ type Path = Types.Path
 -- Function
 --[=[
 	Walks an event payload table by path. Missing payload or path fails closed (nil).
-	@param payload Event payload
-	@param path Path segments inside the payload
-	@return The value at the path, or nil
+	@param payload { [string]: any} - Event payload
+	@param path Path - Path segments inside the payload
+	@return any - The value at the path, or nil
 ]=]
 local function walkPayload(payload: { [string]: any }?, path: Path?): any
 	if typeof(payload) ~= "table" or typeof(path) ~= "table" then

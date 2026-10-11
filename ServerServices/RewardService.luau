@@ -43,19 +43,35 @@ function Private.setupRewardPart(part: BasePart, reward: GameReward): ()
 
 		cd = true
 
-		task.delay(0.5, function()
+		task.delay(1, function()
 			cd = false
 		end)
 
 		local player = fnIsAPlayerCharacter(hit)
 
 		if player then
-			local success, result = RuleEngine.checkAndApplyRule(player, reward.ruleData)
+			local conditionsPassed, rewardsApplied, rollbackApplied, err =
+				RuleEngine.excuteRule(player, reward.ruleData)
 
-			if not success then
-				Logger:warn(`{fn}: Failed to Check/Apply Rewards! Reason:`, result)
+			if not conditionsPassed then
+				local msg1 = `{fn}: Conditions were not satisfied!`
+				local msg2 = `Reason: {err}`
+				Logger:warn(`{msg1}\n{msg2}`)
+			elseif not rewardsApplied then
+				local msg1 = `{fn}: Rewards were not applied!`
+				local msg2 = `Reason: {err}`
+
+				if typeof(rollbackApplied) == "boolean" then
+					if rollbackApplied then
+						msg1 = `Rewards were not applied, and Rollback was successfull!`
+					else
+						msg1 = `Rewards were not applied, and Rollback failed!`
+					end
+				end
+
+				Logger:warn(`{msg1}\n{msg2}`)
 			else
-				Logger:print(`{fn}: Rewards were applied successfully!`)
+				Logger:print(`{fn}: Conditions were satisfied and Rewards were applied!`)
 			end
 		end
 	end)

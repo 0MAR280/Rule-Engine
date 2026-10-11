@@ -9,6 +9,7 @@ local ToolService = require(Services.ToolService)
 local DataService = require(Services.DataService)
 local CacheService = require(Services.CacheService)
 local RewardService = require(Services.RewardService)
+local TestService = require(Services.TestService)
 
 -- Classes
 local Classes = ReplicatedStorage.Shared.Classes
@@ -25,8 +26,9 @@ local function boot(): ()
 
 	DataService.init()
 	CacheService.init()
-	RewardService.init()
 	ToolService.init()
+	TestService.init()
+	RewardService.init()
 
 	Logger:print(`{fn}: Server is up and running!`)
 end

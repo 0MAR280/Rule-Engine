@@ -2,6 +2,14 @@
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+-- Packages
+local Packages = ReplicatedStorage.Packages
+local Sift = require(Packages.Sift)
+
+-- Libraries
+local Libraries = ReplicatedStorage.Shared.Libraries
+local TypeChecker = require(Libraries.TypeChecker)
+
 -- Modules
 local Modules = ReplicatedStorage.Shared.Modules
 local SignalManager = require(Modules.Core.SignalManager)
@@ -22,10 +30,10 @@ type Reward = Types.Reward
 	Passes reward parameters as a tuple when unpackParams is true, or as a table otherwise.
 	@param player Player - The player receiving the reward
 	@param reward Reward - The reward configuration containing the signal path, decrement amount, and parameters
-	@return nil - Invalid paths or parameters are reported through the logger.
+	@return boolean - Wether the operation was successfull
+	@return string? - Error message in case of failure
 ]=]
-local function fireSignalReward(player: Player, reward: Reward): ()
-	local fn = `FireSignal-RewardCase`
+local function fireSignalReward(player: Player, reward: Reward): (boolean, string?)
 	local signalPath = reward.path
 
 	if signalPath then
@@ -34,16 +42,38 @@ local function fireSignalReward(player: Player, reward: Reward): ()
 		if signal then
 			local params = reward.params or {}
 
+			if type(params) ~= "table" then
+				local msg = `Expected reward.params to be an array, got: {TypeChecker.getType(params)}!`
+				Logger:warn(msg)
+
+				return false, msg
+			end
+
+			if next(params) ~= nil and not Sift.Array.isArray(params) then
+				local msg = `Expected reward.params to be an array, got: a "dictionary"!`
+				Logger:warn(msg)
+
+				return false, msg
+			end
+
 			if reward.unpackParams then
 				SignalManager.fireSignal(signal, player, table.unpack(params))
 			else
 				SignalManager.fireSignal(signal, player, params)
 			end
+
+			return true, nil
 		else
-			Logger:warn(`{fn}: Provided signal path is invalid!`)
+			local msg = `Provided signal path is invalid!`
+			Logger:warn(msg)
+
+			return false, msg
 		end
 	else
-		Logger:warn(`{fn}: Signal path is nil!`)
+		local msg = `Signal path is nil!`
+		Logger:warn(msg)
+
+		return false, msg
 	end
 end
 

@@ -28,7 +28,7 @@ return {
 		Shared.reward("coins", reward, dataSignal),
 	}),
 	attributes = {
-		name = `Currency Trade`,
+		name = `Increment + Decrement`,
 		description = `Get {reward} Coins for {cost} Points`,
 		color = Color3.fromRGB(150, 255, 0),
 	},

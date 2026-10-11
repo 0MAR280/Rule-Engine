@@ -57,12 +57,12 @@ end
     Initialize player data tree
     @param player Player - The player player instance
 	@param toolName string - The tool name to give
-	@param ... any -- Extra paramters to print :D
+	@param ... any -- Extra Parameters to print :D
 ]=]
 function Private.onGiveToolSignal(player: Player, toolName: string, ...: any): ()
 	local fn = `onGiveToolSignal`
 
-	Logger:print(`{fn}: Received a give tool signal with extra paramters:`, ...)
+	Logger:print(`{fn}: Received a give tool signal with extra Parameters:`, ...)
 
 	local tool = ToolsFolder:FindFirstChild(toolName) :: Tool
 

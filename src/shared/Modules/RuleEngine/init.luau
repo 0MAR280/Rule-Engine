@@ -1,13 +1,21 @@
 --!strict
 --[=[
     RuleEngine.luau
-    A singleton rule engine module for evaluating conditions and applying rewards, inspired by MarketplaceService's internal rule engine.
+    A singleton rule engine module for evaluating conditions and applying rewards.
     Supports context validation (Server/Client/Both) and type-checked rule data.
 ]=]
 
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+
+-- Packages
+local Packages = ReplicatedStorage.Packages
+local Sift = require(Packages.Sift)
+
+-- Libraries
+local Libraries = ReplicatedStorage.Shared.Libraries
+local TypeChecker = require(Libraries.TypeChecker)
 
 -- Modules
 local Modules = ReplicatedStorage.Shared.Modules
@@ -27,10 +35,29 @@ local fnSolveAllConditions = require(Helpers.SolveAllConditions)
 -- Variables
 local currentContext: ContextType = RunService:IsServer() and ENUMS.ContextTypes.Server or ENUMS.ContextTypes.Client
 
+-- Functions
+-- Private
+--[=[
+	Sift treats empty tables as non-arrays. Empty condition/reward lists are valid.
+	@param value any - The value to check
+	@return boolean - Whether the value is an array, including empty
+]=]
+local function isList(value: any): boolean
+	if typeof(value) ~= "table" then
+		return false
+	end
+
+	if next(value) == nil then
+		return true
+	end
+
+	return Sift.Array.isArray(value)
+end
+
 -- Types
 type ContextType = Types.ContextType
-type RuleData = Types.RuleData
 type RuleEngine = Types.RuleEngine
+type RuleData = Types.RuleData
 
 -- Module
 local RuleEngine = {}
@@ -39,50 +66,111 @@ local RuleEngine = {}
 --[=[
 	Check if the rule conditions are satisfied for a player, and if so, apply the rewards.
     Handles context validation and error reporting.
-    @param player The player to evaluate the rule against
-    @param rule The rule data containing context, conditions, and rewards
-    @return boolean indicating if the rule was successfully applied, and an optional error message
+	Handles rolling back on case of rewards applying failure
+    @param player Player - The player to evaluate the rule against
+    @param rule RuleData - The rule data containing context, conditions, and rewards
+    @return boolean - Wether the conditions were satisfied
+    @return boolean - Wether the rewards were applied
+    @return boolean - Wether the rollback was successfull (In case of rewards failure only)
+	@return string? - Error message in case of failure
 ]=]
-function RuleEngine.checkAndApplyRule(player: Player, rule: RuleData, payload: { [string]: any }?): (boolean, string?)
-	local fn = `checkAndApplyRule`
+function RuleEngine.excuteRule(
+	player: Player,
+	rule: RuleData,
+	payload: { [string]: any }?
+): (boolean, boolean, boolean?, string?)
+	local fn = `excuteRule`
 
 	if not fnCheckContext(rule.context) then
 		local msg = `{fn}: Context mismatch. Expected: {rule.context} Current: {currentContext}`
 		Logger:warn(msg)
-		return false, msg
+
+		return false, false, nil, msg
 	end
 
-	local success, err = RuleEngine.checkRules(player, rule, payload)
-	if not success then
-		return false, `{fn}: {tostring(err)}`
-	end
-
-	local pcallSuccess, applied, applyErr = pcall(function(): (boolean, string?)
-		return RuleEngine.applyRewards(player, rule)
+	local conditionsPcallSuccess, conditionsStatisfied, conditionsErr = pcall(function(): (boolean, string?)
+		return RuleEngine.checkConditions(player, rule, payload)
 	end)
-	if not pcallSuccess then
-		return false, `{fn}: Failed to apply rewards: {tostring(applied)}`
-	end
-	if applied == false then
-		return false, `{fn}: Failed to apply rewards: {tostring(applyErr)}`
+
+	if not conditionsPcallSuccess then
+		local msg1 = `Failed to check conditions!`
+		local msg2 = `A runtime error: {tostring(conditionsErr)}`
+		Logger:warn(`{fn}: {msg1}\n{msg2}`)
+
+		return false, false, nil, msg2
+	elseif not conditionsStatisfied then
+		return false, false, nil, conditionsErr
 	end
 
-	return true
+	local rewardsPcallSuccess, rewardsStatisfied, rewardsErr, rewardsFailureIndex = pcall(
+		function(): (boolean, string?, number?)
+			return RuleEngine.applyRewards(player, rule)
+		end
+	)
+
+	if typeof(rewardsFailureIndex) == "number" and rewardsFailureIndex > 1 then
+		local msg1 = `Applying operation aborted, rewards applied: {(rewardsFailureIndex or 1) - 1}!`
+		local msg2 = `Err: {rewardsErr}`
+		local msg3 = `Performing a Rollback...`
+		Logger:warn(`{fn}: {msg1}\n{msg2}\n{msg3}`)
+
+		local rollbackPcallSuccess, rollbackApplied, rollbackErr, rollbackFailureIndex = pcall(
+			function(): (boolean, string?, number?)
+				return RuleEngine.applyRollback(player, rule, rewardsFailureIndex)
+			end
+		)
+
+		if not rollbackPcallSuccess then
+			msg1 = `Failed to apply rollback at index {rollbackFailureIndex}!`
+			msg2 = `A runtime error: {tostring(rollbackErr)}`
+			Logger:warn(`{fn}: {msg1}\n{msg2}`)
+
+			return true, false, false, msg2
+		elseif not rollbackApplied then
+			msg1 = `Failed to apply rollback!`
+			msg2 = `A mal ruledata: {tostring(rollbackErr)}`
+			Logger:warn(`{fn}: {msg1}\n{msg2}`)
+
+			return true, false, false, msg2
+		end
+
+		return true, false, true, rollbackErr
+	end
+
+	if not rewardsPcallSuccess then
+		local msg1 = `Failed to apply rewards!`
+		local msg2 = `A runtime error: {tostring(rewardsErr)}`
+		Logger:warn(`{fn}: {msg1}\n{msg2}`)
+
+		return true, false, false, msg2
+	elseif not rewardsStatisfied then
+		local msg1 = `Failed to apply rewards!`
+		local msg2 = `A mal ruledata: {tostring(rewardsErr)}`
+		Logger:warn(`{fn}: {msg1}\n{msg2}`)
+
+		return true, false, false, msg2
+	end
+
+	return true, true, nil, nil
 end
 
 --[=[
-	Applies the rewards of a rule to a player, ensuring context validity and handling errors gracefully.
-    @param player The player to apply the rewards to
-    @param rule The rule data containing context, conditions, and rewards
-    @return boolean indicating if the rewards were applied successfully, and an optional error message
+	Applies the rewards of a rule to a player.
+    @param player Player - The player to apply the rewards to
+    @param rule RuleData - The rule data containing context, conditions, and rewards
+	@param failureIndex number? - The index from where to start reversing the rewards
+    @return boolean - Wether the rewards were applied successfully
+	@return string - Optional error message in case of failure
+	@return number? - The failed reward index (In case of failure only)
 ]=]
-function RuleEngine.applyRewards(player: Player, rule: RuleData): (boolean, string?)
+function RuleEngine.applyRewards(player: Player, rule: RuleData): (boolean, string?, number?)
 	local fn = `applyRewards`
 
 	if not fnCheckContext(rule.context) then
 		local msg = `{fn}: Context mismatch. Expected: {rule.context} Current: {currentContext}`
 		Logger:warn(msg)
-		return false, msg
+
+		return false, msg, nil
 	end
 
 	if rule.rewards then
@@ -95,7 +183,63 @@ function RuleEngine.applyRewards(player: Player, rule: RuleData): (boolean, stri
 			if not success then
 				local msg = `{fn}: Failed to apply reward function: {tostring(err)}`
 				Logger:warn(msg)
-				return false, msg
+
+				return false, msg, nil
+			end
+
+			if rewardResult == false then
+				return false, rewardMsg, nil
+			end
+
+			return true
+		elseif isList(rule.rewards) then
+			return fnApplyRewards(player, rule.rewards)
+		else
+			local msg =
+				`rule.rewards is expected as a "function" or an array, got: {TypeChecker.getType(rule.rewards)}!`
+			Logger:warn(`{fn}: {msg}`)
+
+			return false, msg, nil
+		end
+	end
+
+	local msg = `{fn}: No rewards were defined for this rule.`
+	Logger:print(msg)
+
+	return true, msg, nil
+end
+
+--[=[
+	Reverse the applied rewards to a player
+    @param player Player - The player to apply the rewards to
+    @param rule RuleData - The rule data containing context, conditions, and rewards
+	@param failureIndex number? - The index from where to start reversing the rewards
+    @return boolean - Wether the rewards were applied successfully
+	@return string - Optional error message in case of failure
+	@return number? - The failed reward index (In case of failure only)
+]=]
+function RuleEngine.applyRollback(player: Player, rule: RuleData, failureIndex: number?): (boolean, string?, number?)
+	local fn = `applyRollback`
+
+	if not fnCheckContext(rule.context) then
+		local msg = `{fn}: Context mismatch. Expected: {rule.context} Current: {currentContext}`
+		Logger:warn(msg)
+
+		return false, msg, nil
+	end
+
+	if rule.rollbackRewards then
+		if typeof(rule.rollbackRewards) == "function" then
+			local rewardResult, rewardMsg
+			local success, err = pcall(function()
+				rewardResult, rewardMsg = rule.rollbackRewards(player)
+			end)
+
+			if not success then
+				local msg = `{fn}: Failed to apply reward reverse function: {tostring(err)}`
+				Logger:warn(msg)
+
+				return false, msg, nil
 			end
 
 			if rewardResult == false then
@@ -103,28 +247,39 @@ function RuleEngine.applyRewards(player: Player, rule: RuleData): (boolean, stri
 			end
 
 			return true
-		elseif typeof(rule.rewards) == "table" then
-			return fnApplyRewards(player, rule.rewards)
+		elseif isList(rule.rollbackRewards) then
+			return fnApplyRewards(player, rule.rollbackRewards, failureIndex)
+		else
+			local msg = `rule.rollbackRewards is expected as a "function" or an array, got: {TypeChecker.getType(
+				rule.rollbackRewards
+			)}!`
+			Logger:warn(`{fn}: {msg}`)
+
+			return false, msg, nil
 		end
 	end
 
-	local msg = `{fn}: No rewards defined for this rule.`
+	local msg = `{fn}: No rollbackRewards were defined for this rule.`
 	Logger:print(msg)
-	return true, msg
+
+	return true, msg, nil
 end
 
 --[=[
-	Checks if a player satisfies the conditions of a rule, ensuring context validity and handling errors gracefully.
-    @param player The player to check the rule against
-    @param rule The rule data containing context, conditions, and rewards
-    @return boolean indicating if the rule conditions are satisfied, and an optional error message
+	Checks if a player satisfies the conditions of a rule.
+    @param player Player - The player to apply the rewards to
+    @param rule RuleData - The rule data containing context, conditions, and rewards
+	@param failureIndex number? - The index from where to start reversing the rewards
+    @return boolean - Wether the conditions were satisfied
+	@return string - Optional error message in case of failure
 ]=]
-function RuleEngine.checkRules(player: Player, rule: RuleData, payload: { [string]: any }?): (boolean, string?)
-	local fn = `checkRules`
+function RuleEngine.checkConditions(player: Player, rule: RuleData, payload: { [string]: any }?): (boolean, string?)
+	local fn = `checkConditions`
 
 	if not fnCheckContext(rule.context) then
 		local msg = `{fn}: Context mismatch. Expected: {rule.context} Current: {currentContext}`
 		Logger:warn(msg)
+
 		return false, msg
 	end
 
@@ -139,17 +294,25 @@ function RuleEngine.checkRules(player: Player, rule: RuleData, payload: { [strin
 			if not success then
 				local msg = `{fn}: Failed to check conditions: {tostring(err)}`
 				Logger:warn(msg)
+
 				return false, msg
 			else
 				return resullt, reason
 			end
-		elseif typeof(rule.conditions) == "table" then
+		elseif isList(rule.conditions) then
 			return fnSolveAllConditions(player, rule.conditions, payload)
+		else
+			local msg =
+				`rule.conditions is expected as a "function" or an array, got: {TypeChecker.getType(rule.conditions)}!`
+			Logger:warn(`{fn}: {msg}`)
+
+			return false, msg
 		end
 	end
 
-	local msg = `{fn}: No conditions defined for this rule.`
+	local msg = `{fn}: No conditions were defined for this rule.`
 	Logger:print(msg)
+
 	return true, msg
 end
 

@@ -4,18 +4,18 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Modules
 local Modules = ReplicatedStorage.Shared.Modules
+local BALANCES = require(Modules.Data.BALANCES)
 local Types = require(Modules.Types.Types)
 local PATHS = require(Modules.Data.PATHS)
+local ENUMS = require(Modules.Data.ENUMS)
 
 -- References
 local Shared = require(script.Parent._Shared)
 
 -- Variables
-local cost = 10 -- Points Charge
-local reward = 10 -- Coins Reward
+local setValue = 50 -- Coins to set
 
-local cacheSignal = PATHS.signals.cacheService.server.updatePlayerData
-local dataSignal = PATHS.signals.dataService.server.updatePlayerData
+local dataSetSignal = PATHS.signals.dataService.server.setPlayerData
 
 -- Types
 type GameReward = Types.GameReward
@@ -23,13 +23,24 @@ type GameReward = Types.GameReward
 -- Module
 return {
 	id = 2,
-	ruleData = Shared.balanceRule("points", cost, {
-		Shared.cachePayment("points", cost, cacheSignal),
-		Shared.reward("coins", reward, dataSignal),
-	}),
+	ruleData = {
+		context = ENUMS.ContextTypes.Server,
+		conditions = {
+			{
+				name = "Coins are not already set",
+				value1 = { param = BALANCES.coins },
+				value2 = setValue,
+				opType = ENUMS.ConditionOpTypes.NotEqual,
+				onFalse = `Coins are already {setValue}!`,
+			},
+		},
+		rewards = {
+			Shared.set("coins", setValue, dataSetSignal),
+		},
+	},
 	attributes = {
-		name = `Currency Trade`,
-		description = `Get {reward} Coins for {cost} Points`,
+		name = `Set`,
+		description = `Set Coins to {setValue}`,
 		color = Color3.fromRGB(255, 255, 0),
 	},
 } :: GameReward

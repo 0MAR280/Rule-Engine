@@ -13,10 +13,11 @@ type Condition = Types.Condition
 -- Function
 --[=[
 	Evaluates conditions in order, returning on the first condition that fails.
-	@param player The player to evaluate the conditions against
-	@param conditions The conditions to evaluate, or nil
-	@param payload Optional event payload for dynamic values
-	@return Whether all conditions are satisfied, and an optional failure message
+	@param player Player - The player to evaluate the conditions against
+	@param conditions { Conditions } - The conditions to evaluate, or nil
+	@param payload { [string]: any } Optional event payload for dynamic values
+	@return boolean - Whether all conditions are satisfied
+	@return string? - The first error if any (In case of failure only)
 ]=]
 local function solveAllConditions(
 	player: Player,

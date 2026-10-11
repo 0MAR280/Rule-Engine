@@ -335,27 +335,27 @@ gcLgc4RKxr21zq2UlJSM]]></BinaryString>
 		<Item class="Camera" referent="RBX421FBA2A78F144CDB0D155E93428A8CA">
 			<Properties>
 				<CoordinateFrame name="CFrame">
-					<X>-7.19367266</X>
-					<Y>22.0106411</Y>
-					<Z>9.6157074</Z>
-					<R00>0.663909674</R00>
-					<R01>0.658373296</R01>
-					<R02>-0.354636848</R02>
-					<R10>5.47152013e-09</R10>
-					<R11>0.474232197</R11>
-					<R12>0.880400896</R12>
-					<R20>0.747810364</R20>
-					<R21>-0.584507763</R21>
-					<R22>0.314849675</R22>
+					<X>-2.73546433</X>
+					<Y>16.158144</Y>
+					<Z>16.6836052</Z>
+					<R00>0.979297817</R00>
+					<R01>0.123437911</R01>
+					<R02>-0.160434633</R02>
+					<R10>2.61352398e-08</R10>
+					<R11>0.792564571</R11>
+					<R12>0.60979259</R12>
+					<R20>0.202426419</R20>
+					<R21>-0.597168922</R21>
+					<R22>0.776158094</R22>
 				</CoordinateFrame>
 				<Ref name="CameraSubject">null</Ref>
 				<token name="CameraType">0</token>
 				<float name="FieldOfView">70</float>
 				<token name="FieldOfViewMode">0</token>
 				<CoordinateFrame name="Focus">
-					<X>-6.48439884</X>
-					<Y>20.2498398</Y>
-					<Z>8.98600769</Z>
+					<X>-2.41459513</X>
+					<Y>14.9385586</Y>
+					<Z>15.1312885</Z>
 					<R00>1</R00>
 					<R01>0</R01>
 					<R02>0</R02>
@@ -1403,6 +1403,21 @@ boot()
 			<UniqueId name="UniqueId">5333c15553ba16e90adb1566000003b1</UniqueId>
 		</Properties>
 	</Item>
+	<Item class="ServiceVisibilityService" referent="RBX44517D4E16094ADB927C64F89854594E">
+		<Properties>
+			<BinaryString name="HiddenServices">AAAAAA==</BinaryString>
+			<BinaryString name="VisibleServices">AAAAAA==</BinaryString>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+			<string name="Name">ServiceVisibilityService</string>
+			<BinaryString name="SerializedOverrides"></BinaryString>
+			<int64 name="SourceAssetId">-1</int64>
+			<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+			<UniqueId name="UniqueId">5333c15553ba16e90adb1566000003d1</UniqueId>
+		</Properties>
+	</Item>
 	<Item class="LuaWebService" referent="RBX3FCEB67A25DF49428B86F5FD00E31860">
 		<Properties>
 			<BinaryString name="AttributesSerialize"></BinaryString>
@@ -2024,6 +2039,7 @@ local rewards = {
 	[2] = require(script["2"]),
 	[3] = require(script["3"]),
 	[4] = require(script["4"]),
+	[5] = require(script["5"]),
 } :: { [number]: GameReward }
 
 return rewards
@@ -2185,6 +2201,44 @@ function Shared.fireSignal(rewardName: string, path: Path, signalParams: { any }
 	}
 end
 
+--[=[
+	Builds the reward that sets player data in the selected currency.
+	@param currency string - The currency to set
+	@param value number - The value to set
+	@param path Path - The signal path relative to CommsHub
+	@return Reward - The set reward
+]=]
+function Shared.set(currency: string, value: number, path: Path): Reward
+	return {
+		name = "Set",
+		path = path,
+		value = value,
+		opType = ENUMS.RewardOpTypes.Set,
+		params = {
+			userDataPaths[currency],
+		},
+	}
+end
+
+--[=[
+	Builds the reward that sets cache data in the selected currency.
+	@param currency string - The currency to set
+	@param value number - The value to set
+	@param path Path - The signal path relative to CommsHub
+	@return Reward - The set reward
+]=]
+function Shared.cacheSet(currency: string, value: number, path: Path): Reward
+	return {
+		name = "Set",
+		path = path,
+		value = value,
+		opType = ENUMS.RewardOpTypes.Set,
+		params = {
+			userCachePaths[currency],
+		},
+	}
+end
+
 return Shared
 ]]></ProtectedString>
 								<string name="ScriptGuid">{B8CE74D7-223B-4A9C-A0DB-7B676074AEF1}</string>
@@ -2232,7 +2286,7 @@ return {
 		Shared.reward("coins", reward, dataSignal),
 	}),
 	attributes = {
-		name = `Currency Trade`,
+		name = `Increment + Decrement`,
 		description = `Get {reward} Coins for {cost} Points`,
 		color = Color3.fromRGB(150, 255, 0),
 	},
@@ -2259,18 +2313,18 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Modules
 local Modules = ReplicatedStorage.Shared.Modules
+local BALANCES = require(Modules.Data.BALANCES)
 local Types = require(Modules.Types.Types)
 local PATHS = require(Modules.Data.PATHS)
+local ENUMS = require(Modules.Data.ENUMS)
 
 -- References
 local Shared = require(script.Parent._Shared)
 
 -- Variables
-local cost = 10 -- Points Charge
-local reward = 10 -- Coins Reward
+local setValue = 50 -- Coins to set
 
-local cacheSignal = PATHS.signals.cacheService.server.updatePlayerData
-local dataSignal = PATHS.signals.dataService.server.updatePlayerData
+local dataSetSignal = PATHS.signals.dataService.server.setPlayerData
 
 -- Types
 type GameReward = Types.GameReward
@@ -2278,13 +2332,24 @@ type GameReward = Types.GameReward
 -- Module
 return {
 	id = 2,
-	ruleData = Shared.balanceRule("points", cost, {
-		Shared.cachePayment("points", cost, cacheSignal),
-		Shared.reward("coins", reward, dataSignal),
-	}),
+	ruleData = {
+		context = ENUMS.ContextTypes.Server,
+		conditions = {
+			{
+				name = "Coins are not already set",
+				value1 = { param = BALANCES.coins },
+				value2 = setValue,
+				opType = ENUMS.ConditionOpTypes.NotEqual,
+				onFalse = `Coins are already {setValue}!`,
+			},
+		},
+		rewards = {
+			Shared.set("coins", setValue, dataSetSignal),
+		},
+	},
 	attributes = {
-		name = `Currency Trade`,
-		description = `Get {reward} Coins for {cost} Points`,
+		name = `Set`,
+		description = `Set Coins to {setValue}`,
 		color = Color3.fromRGB(255, 255, 0),
 	},
 } :: GameReward
@@ -2310,17 +2375,18 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Modules
 local Modules = ReplicatedStorage.Shared.Modules
+local BALANCES = require(Modules.Data.BALANCES)
 local Types = require(Modules.Types.Types)
 local PATHS = require(Modules.Data.PATHS)
+local ENUMS = require(Modules.Data.ENUMS)
 
 -- References
 local Shared = require(script.Parent._Shared)
 
 -- Variables
-local cost = 10 -- Points Charge
 local reward = 15 -- Coins Reward
+local cap = 100 -- Coins cap
 
-local cacheSignal = PATHS.signals.cacheService.server.updatePlayerData
 local dataSignal = PATHS.signals.dataService.server.updatePlayerData
 
 -- Types
@@ -2329,13 +2395,24 @@ type GameReward = Types.GameReward
 -- Module
 return {
 	id = 3,
-	ruleData = Shared.balanceRule("points", cost, {
-		Shared.cachePayment("points", cost, cacheSignal),
-		Shared.reward("coins", reward, dataSignal),
-	}),
+	ruleData = {
+		context = ENUMS.ContextTypes.Server,
+		conditions = {
+			{
+				name = "Coins below cap",
+				value1 = { param = BALANCES.coins },
+				value2 = cap,
+				opType = ENUMS.ConditionOpTypes.LessThan,
+				onFalse = `Coins cap of {cap} reached!`,
+			},
+		},
+		rewards = {
+			Shared.reward("coins", reward, dataSignal),
+		},
+	},
 	attributes = {
-		name = `Currency Trade`,
-		description = `Get {reward} Coins for {cost} Points`,
+		name = `Increment`,
+		description = `Get {reward} Coins (cap {cap})`,
 		color = Color3.fromRGB(0, 255, 255),
 	},
 } :: GameReward
@@ -2412,7 +2489,7 @@ return {
 	},
 
 	attributes = {
-		name = `Currency Trade`,
+		name = `FireSignal`,
 		description = `Get a Sword for {coinsCost} Coins & {pointsCost} Points`,
 		color = Color3.fromRGB(0, 255, 150),
 	},
@@ -2428,6 +2505,68 @@ return {
 								<int64 name="SourceAssetId">-1</int64>
 								<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 								<UniqueId name="UniqueId">5333c15553ba16e90adb156600002d4d</UniqueId>
+							</Properties>
+						</Item>
+						<Item class="ModuleScript" referent="RBX46249D303D2B4BB6B0D240D2628DED10">
+							<Properties>
+								<Content name="LinkedSource"><null></null></Content>
+								<ProtectedString name="Source"><![CDATA[--!strict
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Modules
+local Modules = ReplicatedStorage.Shared.Modules
+local BALANCES = require(Modules.Data.BALANCES)
+local Types = require(Modules.Types.Types)
+local PATHS = require(Modules.Data.PATHS)
+local ENUMS = require(Modules.Data.ENUMS)
+
+-- References
+local Shared = require(script.Parent._Shared)
+
+-- Variables
+local cost = 10 -- Points Charge
+
+local cacheSignal = PATHS.signals.cacheService.server.updatePlayerData
+
+-- Types
+type GameReward = Types.GameReward
+
+-- Module
+return {
+	id = 5,
+	ruleData = {
+		context = ENUMS.ContextTypes.Server,
+		conditions = {
+			{
+				name = "Points above cost",
+				value1 = { param = BALANCES.points },
+				value2 = cost,
+				opType = ENUMS.ConditionOpTypes.GreaterThan,
+				onFalse = `Need more than {cost} Points!`,
+			},
+		},
+		rewards = {
+			Shared.cachePayment("points", cost, cacheSignal),
+		},
+	},
+	attributes = {
+		name = `Decrement`,
+		description = `Spend {cost} Points`,
+		color = Color3.fromRGB(255, 120, 80),
+	},
+} :: GameReward
+]]></ProtectedString>
+								<string name="ScriptGuid">{C09E8884-D87C-4730-B7ED-36C2662B99AD}</string>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+								<string name="Name">5</string>
+								<BinaryString name="SerializedOverrides"></BinaryString>
+								<int64 name="SourceAssetId">-1</int64>
+								<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+								<UniqueId name="UniqueId">120b36642ab4d1160adc70b700002596</UniqueId>
 							</Properties>
 						</Item>
 					</Item>
@@ -2499,6 +2638,13 @@ export type Signal = {
 }
 
 -- Rule Engine Types
+export type RuleEngine = {
+	excuteRule: (player: Player, rule: RuleData) -> (boolean, boolean, boolean?, string?),
+	applyRollback: (player: Player, rule: RuleData) -> (boolean, string?, number?),
+	applyRewards: (player: Player, rule: RuleData) -> (boolean, string?, number?),
+	checkConditions: (player: Player, rule: RuleData) -> (boolean, string?),
+}
+
 -- DataPath | CachePath | Value | Now — Type of operation on the condition params
 export type ParamOpType = ENUMS.ParamOpTypeValue -- Custom Enum
 
@@ -2519,12 +2665,33 @@ export type RuleData = {
 	conditions: ({ Condition } | ((Player) -> (boolean, string?)))?,
 	-- A table of rewards—or a function—to reward if the conditions passed.
 	rewards: ({ Reward } | ((Player) -> (boolean, string?)))?,
+
+	-- A table of rewards-or a function-to reverse the applied rewards in case of failure
+	rollbackRewards: ({ Reward } | ((Player) -> (boolean, string?)))?,
 }
 
 -- any (2, 4, or "Sowrd", can be anything) or a table that has "param" entry
-export type Value = any | { param: Param }
+export type Value = any | {
+	-- A custom param to resolve into a value
+	param: Param,
 
--- A paramter is usually used to write/read user data with Data/Cache Services
+	-- Optional callback that expects and manipulates the resolved Parameter value
+	callBack: (...any) -> any?,
+
+	--[[
+        Wether to use table.unpack(params) to send as a tuble to the callback,
+        or just send it as an array to the callback
+    ]]
+	unpackParams: boolean?,
+
+	--[[
+		If the callback returns an array, and this is set.
+		The condition value will resolve to the matching array index
+	]]
+	returnIndex: number?,
+}
+
+-- A parameter is usually used to write/read user data with Data/Cache Services
 export type Param = {
 	type: ParamOpType,
 	path: Path?,
@@ -2533,7 +2700,7 @@ export type Param = {
 
 -- A table to compare 2 values against each other
 export type Condition = {
-	name: string?, -- Condition name to use in the logs
+	name: string, -- Condition name to use in the logs
 
 	--[[
         If params were provided instead of normal values, the engine will resolve
@@ -2548,7 +2715,7 @@ export type Condition = {
 
 -- A table that contains the reward data
 export type Reward = {
-	name: string?, -- Reward name to use in the logs
+	name: string, -- Reward name to use in the logs
 
 	--[[
         -- Increment | Decrement | Set for quick data manipulation
@@ -2565,7 +2732,7 @@ export type Reward = {
     ]]
 	path: Path?,
 
-	-- An array of optional extra paramters to send to the receiving end
+	-- An array of optional extra parameters to send to the receiving end
 	params: { any }?,
 
 	--[[
@@ -3108,13 +3275,21 @@ end
 						<ProtectedString name="Source"><![CDATA[--!strict
 --[=[
     RuleEngine.luau
-    A singleton rule engine module for evaluating conditions and applying rewards, inspired by MarketplaceService's internal rule engine.
+    A singleton rule engine module for evaluating conditions and applying rewards.
     Supports context validation (Server/Client/Both) and type-checked rule data.
 ]=]
 
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+
+-- Packages
+local Packages = ReplicatedStorage.Packages
+local Sift = require(Packages.Sift)
+
+-- Libraries
+local Libraries = ReplicatedStorage.Shared.Libraries
+local TypeChecker = require(Libraries.TypeChecker)
 
 -- Modules
 local Modules = ReplicatedStorage.Shared.Modules
@@ -3134,10 +3309,29 @@ local fnSolveAllConditions = require(Helpers.SolveAllConditions)
 -- Variables
 local currentContext: ContextType = RunService:IsServer() and ENUMS.ContextTypes.Server or ENUMS.ContextTypes.Client
 
+-- Functions
+-- Private
+--[=[
+	Sift treats empty tables as non-arrays. Empty condition/reward lists are valid.
+	@param value any - The value to check
+	@return boolean - Whether the value is an array, including empty
+]=]
+local function isList(value: any): boolean
+	if typeof(value) ~= "table" then
+		return false
+	end
+
+	if next(value) == nil then
+		return true
+	end
+
+	return Sift.Array.isArray(value)
+end
+
 -- Types
 type ContextType = Types.ContextType
-type RuleData = Types.RuleData
 type RuleEngine = Types.RuleEngine
+type RuleData = Types.RuleData
 
 -- Module
 local RuleEngine = {}
@@ -3146,50 +3340,111 @@ local RuleEngine = {}
 --[=[
 	Check if the rule conditions are satisfied for a player, and if so, apply the rewards.
     Handles context validation and error reporting.
-    @param player The player to evaluate the rule against
-    @param rule The rule data containing context, conditions, and rewards
-    @return boolean indicating if the rule was successfully applied, and an optional error message
+	Handles rolling back on case of rewards applying failure
+    @param player Player - The player to evaluate the rule against
+    @param rule RuleData - The rule data containing context, conditions, and rewards
+    @return boolean - Wether the conditions were satisfied
+    @return boolean - Wether the rewards were applied
+    @return boolean - Wether the rollback was successfull (In case of rewards failure only)
+	@return string? - Error message in case of failure
 ]=]
-function RuleEngine.checkAndApplyRule(player: Player, rule: RuleData, payload: { [string]: any }?): (boolean, string?)
-	local fn = `checkAndApplyRule`
+function RuleEngine.excuteRule(
+	player: Player,
+	rule: RuleData,
+	payload: { [string]: any }?
+): (boolean, boolean, boolean?, string?)
+	local fn = `excuteRule`
 
 	if not fnCheckContext(rule.context) then
 		local msg = `{fn}: Context mismatch. Expected: {rule.context} Current: {currentContext}`
 		Logger:warn(msg)
-		return false, msg
+
+		return false, false, nil, msg
 	end
 
-	local success, err = RuleEngine.checkRules(player, rule, payload)
-	if not success then
-		return false, `{fn}: {tostring(err)}`
-	end
-
-	local pcallSuccess, applied, applyErr = pcall(function(): (boolean, string?)
-		return RuleEngine.applyRewards(player, rule)
+	local conditionsPcallSuccess, conditionsStatisfied, conditionsErr = pcall(function(): (boolean, string?)
+		return RuleEngine.checkConditions(player, rule, payload)
 	end)
-	if not pcallSuccess then
-		return false, `{fn}: Failed to apply rewards: {tostring(applied)}`
-	end
-	if applied == false then
-		return false, `{fn}: Failed to apply rewards: {tostring(applyErr)}`
+
+	if not conditionsPcallSuccess then
+		local msg1 = `Failed to check conditions!`
+		local msg2 = `A runtime error: {tostring(conditionsErr)}`
+		Logger:warn(`{fn}: {msg1}\n{msg2}`)
+
+		return false, false, nil, msg2
+	elseif not conditionsStatisfied then
+		return false, false, nil, conditionsErr
 	end
 
-	return true
+	local rewardsPcallSuccess, rewardsStatisfied, rewardsErr, rewardsFailureIndex = pcall(
+		function(): (boolean, string?, number?)
+			return RuleEngine.applyRewards(player, rule)
+		end
+	)
+
+	if typeof(rewardsFailureIndex) == "number" and rewardsFailureIndex > 1 then
+		local msg1 = `Applying operation aborted, rewards applied: {(rewardsFailureIndex or 1) - 1}!`
+		local msg2 = `Err: {rewardsErr}`
+		local msg3 = `Performing a Rollback...`
+		Logger:warn(`{fn}: {msg1}\n{msg2}\n{msg3}`)
+
+		local rollbackPcallSuccess, rollbackApplied, rollbackErr, rollbackFailureIndex = pcall(
+			function(): (boolean, string?, number?)
+				return RuleEngine.applyRollback(player, rule, rewardsFailureIndex)
+			end
+		)
+
+		if not rollbackPcallSuccess then
+			msg1 = `Failed to apply rollback at index {rollbackFailureIndex}!`
+			msg2 = `A runtime error: {tostring(rollbackErr)}`
+			Logger:warn(`{fn}: {msg1}\n{msg2}`)
+
+			return true, false, false, msg2
+		elseif not rollbackApplied then
+			msg1 = `Failed to apply rollback!`
+			msg2 = `A mal ruledata: {tostring(rollbackErr)}`
+			Logger:warn(`{fn}: {msg1}\n{msg2}`)
+
+			return true, false, false, msg2
+		end
+
+		return true, false, true, rollbackErr
+	end
+
+	if not rewardsPcallSuccess then
+		local msg1 = `Failed to apply rewards!`
+		local msg2 = `A runtime error: {tostring(rewardsErr)}`
+		Logger:warn(`{fn}: {msg1}\n{msg2}`)
+
+		return true, false, false, msg2
+	elseif not rewardsStatisfied then
+		local msg1 = `Failed to apply rewards!`
+		local msg2 = `A mal ruledata: {tostring(rewardsErr)}`
+		Logger:warn(`{fn}: {msg1}\n{msg2}`)
+
+		return true, false, false, msg2
+	end
+
+	return true, true, nil, nil
 end
 
 --[=[
-	Applies the rewards of a rule to a player, ensuring context validity and handling errors gracefully.
-    @param player The player to apply the rewards to
-    @param rule The rule data containing context, conditions, and rewards
-    @return boolean indicating if the rewards were applied successfully, and an optional error message
+	Applies the rewards of a rule to a player.
+    @param player Player - The player to apply the rewards to
+    @param rule RuleData - The rule data containing context, conditions, and rewards
+	@param failureIndex number? - The index from where to start reversing the rewards
+    @return boolean - Wether the rewards were applied successfully
+	@return string - Optional error message in case of failure
+	@return number? - The failed reward index (In case of failure only)
 ]=]
-function RuleEngine.applyRewards(player: Player, rule: RuleData): (boolean, string?)
+function RuleEngine.applyRewards(player: Player, rule: RuleData): (boolean, string?, number?)
 	local fn = `applyRewards`
 
 	if not fnCheckContext(rule.context) then
 		local msg = `{fn}: Context mismatch. Expected: {rule.context} Current: {currentContext}`
 		Logger:warn(msg)
-		return false, msg
+
+		return false, msg, nil
 	end
 
 	if rule.rewards then
@@ -3202,7 +3457,63 @@ function RuleEngine.applyRewards(player: Player, rule: RuleData): (boolean, stri
 			if not success then
 				local msg = `{fn}: Failed to apply reward function: {tostring(err)}`
 				Logger:warn(msg)
-				return false, msg
+
+				return false, msg, nil
+			end
+
+			if rewardResult == false then
+				return false, rewardMsg, nil
+			end
+
+			return true
+		elseif isList(rule.rewards) then
+			return fnApplyRewards(player, rule.rewards)
+		else
+			local msg =
+				`rule.rewards is expected as a "function" or an array, got: {TypeChecker.getType(rule.rewards)}!`
+			Logger:warn(`{fn}: {msg}`)
+
+			return false, msg, nil
+		end
+	end
+
+	local msg = `{fn}: No rewards were defined for this rule.`
+	Logger:print(msg)
+
+	return true, msg, nil
+end
+
+--[=[
+	Reverse the applied rewards to a player
+    @param player Player - The player to apply the rewards to
+    @param rule RuleData - The rule data containing context, conditions, and rewards
+	@param failureIndex number? - The index from where to start reversing the rewards
+    @return boolean - Wether the rewards were applied successfully
+	@return string - Optional error message in case of failure
+	@return number? - The failed reward index (In case of failure only)
+]=]
+function RuleEngine.applyRollback(player: Player, rule: RuleData, failureIndex: number?): (boolean, string?, number?)
+	local fn = `applyRollback`
+
+	if not fnCheckContext(rule.context) then
+		local msg = `{fn}: Context mismatch. Expected: {rule.context} Current: {currentContext}`
+		Logger:warn(msg)
+
+		return false, msg, nil
+	end
+
+	if rule.rollbackRewards then
+		if typeof(rule.rollbackRewards) == "function" then
+			local rewardResult, rewardMsg
+			local success, err = pcall(function()
+				rewardResult, rewardMsg = rule.rollbackRewards(player)
+			end)
+
+			if not success then
+				local msg = `{fn}: Failed to apply reward reverse function: {tostring(err)}`
+				Logger:warn(msg)
+
+				return false, msg, nil
 			end
 
 			if rewardResult == false then
@@ -3210,28 +3521,39 @@ function RuleEngine.applyRewards(player: Player, rule: RuleData): (boolean, stri
 			end
 
 			return true
-		elseif typeof(rule.rewards) == "table" then
-			return fnApplyRewards(player, rule.rewards)
+		elseif isList(rule.rollbackRewards) then
+			return fnApplyRewards(player, rule.rollbackRewards, failureIndex)
+		else
+			local msg = `rule.rollbackRewards is expected as a "function" or an array, got: {TypeChecker.getType(
+				rule.rollbackRewards
+			)}!`
+			Logger:warn(`{fn}: {msg}`)
+
+			return false, msg, nil
 		end
 	end
 
-	local msg = `{fn}: No rewards defined for this rule.`
+	local msg = `{fn}: No rollbackRewards were defined for this rule.`
 	Logger:print(msg)
-	return true, msg
+
+	return true, msg, nil
 end
 
 --[=[
-	Checks if a player satisfies the conditions of a rule, ensuring context validity and handling errors gracefully.
-    @param player The player to check the rule against
-    @param rule The rule data containing context, conditions, and rewards
-    @return boolean indicating if the rule conditions are satisfied, and an optional error message
+	Checks if a player satisfies the conditions of a rule.
+    @param player Player - The player to apply the rewards to
+    @param rule RuleData - The rule data containing context, conditions, and rewards
+	@param failureIndex number? - The index from where to start reversing the rewards
+    @return boolean - Wether the conditions were satisfied
+	@return string - Optional error message in case of failure
 ]=]
-function RuleEngine.checkRules(player: Player, rule: RuleData, payload: { [string]: any }?): (boolean, string?)
-	local fn = `checkRules`
+function RuleEngine.checkConditions(player: Player, rule: RuleData, payload: { [string]: any }?): (boolean, string?)
+	local fn = `checkConditions`
 
 	if not fnCheckContext(rule.context) then
 		local msg = `{fn}: Context mismatch. Expected: {rule.context} Current: {currentContext}`
 		Logger:warn(msg)
+
 		return false, msg
 	end
 
@@ -3246,17 +3568,25 @@ function RuleEngine.checkRules(player: Player, rule: RuleData, payload: { [strin
 			if not success then
 				local msg = `{fn}: Failed to check conditions: {tostring(err)}`
 				Logger:warn(msg)
+
 				return false, msg
 			else
 				return resullt, reason
 			end
-		elseif typeof(rule.conditions) == "table" then
+		elseif isList(rule.conditions) then
 			return fnSolveAllConditions(player, rule.conditions, payload)
+		else
+			local msg =
+				`rule.conditions is expected as a "function" or an array, got: {TypeChecker.getType(rule.conditions)}!`
+			Logger:warn(`{fn}: {msg}`)
+
+			return false, msg
 		end
 	end
 
-	local msg = `{fn}: No conditions defined for this rule.`
+	local msg = `{fn}: No conditions were defined for this rule.`
 	Logger:print(msg)
+
 	return true, msg
 end
 
@@ -3310,6 +3640,14 @@ return {
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+-- Packages
+local Packages = ReplicatedStorage.Packages
+local Sift = require(Packages.Sift)
+
+-- Libraries
+local Libraries = ReplicatedStorage.Shared.Libraries
+local TypeChecker = require(Libraries.TypeChecker)
+
 -- Modules
 local Modules = ReplicatedStorage.Shared.Modules
 local SignalManager = require(Modules.Core.SignalManager)
@@ -3332,10 +3670,10 @@ type Reward = Types.Reward
 	is subtracted from the current value, and remaining parameters are forwarded to the signal.
 	@param player Player - The player receiving the reward
 	@param reward Reward - The reward configuration containing the signal path, decrement amount, and parameters
-	@return nil - Invalid paths or parameters are reported through the logger.
+	@return boolean - Wether the operation was successfull
+	@return string? - Error message in case of failure
 ]=]
-local function decrementReward(player: Player, reward: Reward): ()
-	local fn = `Decrement-RewardCase`
+local function decrementReward(player: Player, reward: Reward): (boolean, string?)
 	local signalPath = reward.path
 
 	if signalPath then
@@ -3345,15 +3683,25 @@ local function decrementReward(player: Player, reward: Reward): ()
 			local params = reward.params
 
 			if type(params) ~= "table" then
-				Logger:warn(`{fn}: Expected reward.params to be an array!`)
-				return
+				local msg = `Expected reward.params to be an array, got: {TypeChecker.getType(params)}!`
+				Logger:warn(msg)
+				return false, msg
+			end
+
+			if next(params) ~= nil and not Sift.Array.isArray(params) then
+				local msg = `Expected reward.params to be an array, got: a "dictionary"!`
+				Logger:warn(msg)
+
+				return false, msg
 			end
 
 			local valuePath = params[1]
 
-			if not fnIsValidPath(valuePath) then
-				Logger:warn(`{fn}: Expected at least one path paramter in reward.params for the target value!`)
-				return
+			if valuePath == nil or not fnIsValidPath(valuePath) then
+				local msg = `Expected at least one path Parameter in reward.params for the target value!`
+				Logger:warn(msg)
+
+				return false, msg
 			end
 
 			table.remove(params, 1)
@@ -3364,7 +3712,10 @@ local function decrementReward(player: Player, reward: Reward): ()
 			if valueType == "number" then
 				value = reward.value :: number
 			else
-				Logger:warn(`{fn}: Expected reward.value as 'string' but got '{valueType}'!`)
+				local msg = `Expected reward.value as 'number' but got '{valueType}'!`
+				Logger:warn(msg)
+
+				return false, msg
 			end
 
 			local newValue = function(currentValue: number): number
@@ -3376,11 +3727,19 @@ local function decrementReward(player: Player, reward: Reward): ()
 			else
 				SignalManager.fireSignal(signal, player, valuePath, newValue, params)
 			end
+
+			return true, nil
 		else
-			Logger:warn(`{fn}: Provided signal path is invalid!`)
+			local msg = `Provided signal path is invalid!`
+			Logger:warn(msg)
+
+			return false, msg
 		end
 	else
-		Logger:warn(`{fn}: Signal path is nil!`)
+		local msg = `Signal path is nil!`
+		Logger:warn(msg)
+
+		return false, msg
 	end
 end
 
@@ -3405,6 +3764,14 @@ return decrementReward
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+-- Packages
+local Packages = ReplicatedStorage.Packages
+local Sift = require(Packages.Sift)
+
+-- Libraries
+local Libraries = ReplicatedStorage.Shared.Libraries
+local TypeChecker = require(Libraries.TypeChecker)
+
 -- Modules
 local Modules = ReplicatedStorage.Shared.Modules
 local SignalManager = require(Modules.Core.SignalManager)
@@ -3425,10 +3792,10 @@ type Reward = Types.Reward
 	Passes reward parameters as a tuple when unpackParams is true, or as a table otherwise.
 	@param player Player - The player receiving the reward
 	@param reward Reward - The reward configuration containing the signal path, decrement amount, and parameters
-	@return nil - Invalid paths or parameters are reported through the logger.
+	@return boolean - Wether the operation was successfull
+	@return string? - Error message in case of failure
 ]=]
-local function fireSignalReward(player: Player, reward: Reward): ()
-	local fn = `FireSignal-RewardCase`
+local function fireSignalReward(player: Player, reward: Reward): (boolean, string?)
 	local signalPath = reward.path
 
 	if signalPath then
@@ -3437,16 +3804,38 @@ local function fireSignalReward(player: Player, reward: Reward): ()
 		if signal then
 			local params = reward.params or {}
 
+			if type(params) ~= "table" then
+				local msg = `Expected reward.params to be an array, got: {TypeChecker.getType(params)}!`
+				Logger:warn(msg)
+
+				return false, msg
+			end
+
+			if next(params) ~= nil and not Sift.Array.isArray(params) then
+				local msg = `Expected reward.params to be an array, got: a "dictionary"!`
+				Logger:warn(msg)
+
+				return false, msg
+			end
+
 			if reward.unpackParams then
 				SignalManager.fireSignal(signal, player, table.unpack(params))
 			else
 				SignalManager.fireSignal(signal, player, params)
 			end
+
+			return true, nil
 		else
-			Logger:warn(`{fn}: Provided signal path is invalid!`)
+			local msg = `Provided signal path is invalid!`
+			Logger:warn(msg)
+
+			return false, msg
 		end
 	else
-		Logger:warn(`{fn}: Signal path is nil!`)
+		local msg = `Signal path is nil!`
+		Logger:warn(msg)
+
+		return false, msg
 	end
 end
 
@@ -3471,6 +3860,14 @@ return fireSignalReward
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+-- Packages
+local Packages = ReplicatedStorage.Packages
+local Sift = require(Packages.Sift)
+
+-- Libraries
+local Libraries = ReplicatedStorage.Shared.Libraries
+local TypeChecker = require(Libraries.TypeChecker)
+
 -- Modules
 local Modules = ReplicatedStorage.Shared.Modules
 local SignalManager = require(Modules.Core.SignalManager)
@@ -3493,10 +3890,10 @@ type Reward = Types.Reward
 	is added to the current value, and remaining parameters are forwarded to the signal.
 	@param player Player - The player receiving the reward
 	@param reward Reward - The reward configuration containing the signal path, decrement amount, and parameters
-	@return nil - Invalid paths or parameters are reported through the logger.
+	@return boolean - Wether the operation was successfull
+	@return string? - Error message in case of failure
 ]=]
-local function incrementReward(player: Player, reward: Reward): ()
-	local fn = `Increment-RewardCase`
+local function incrementReward(player: Player, reward: Reward): (boolean, string?)
 	local signalPath = reward.path
 
 	if signalPath then
@@ -3506,15 +3903,26 @@ local function incrementReward(player: Player, reward: Reward): ()
 			local params = reward.params
 
 			if type(params) ~= "table" then
-				Logger:warn(`{fn}: Expected reward.params to be an array!`)
-				return
+				local msg = `Expected reward.params to be an array, got: {TypeChecker.getType(params)}!`
+				Logger:warn(msg)
+
+				return false, msg
+			end
+
+			if next(params) ~= nil and not Sift.Array.isArray(params) then
+				local msg = `Expected reward.params to be an array, got: a "dictionary"!`
+				Logger:warn(msg)
+
+				return false, msg
 			end
 
 			local valuePath = params[1]
 
-			if not fnIsValidPath(valuePath) then
-				Logger:warn(`{fn}: Expected at least one path paramter in reward.params for the target value!`)
-				return
+			if valuePath == nil or not fnIsValidPath(valuePath) then
+				local msg = `Expected at least one path Parameter in reward.params for the target value!`
+				Logger:warn(msg)
+
+				return false, msg
 			end
 
 			table.remove(params, 1)
@@ -3525,7 +3933,10 @@ local function incrementReward(player: Player, reward: Reward): ()
 			if valueType == "number" then
 				value = reward.value :: number
 			else
-				Logger:warn(`{fn}: Expected reward.value as 'string' but got '{valueType}'!`)
+				local msg = `Expected reward.value as 'number' but got '{valueType}'!`
+				Logger:warn(msg)
+
+				return false, msg
 			end
 
 			local newValue = function(currentValue: number): number
@@ -3537,11 +3948,19 @@ local function incrementReward(player: Player, reward: Reward): ()
 			else
 				SignalManager.fireSignal(signal, player, valuePath, newValue, params)
 			end
+
+			return true, nil
 		else
-			Logger:warn(`{fn}: Provided signal path is invalid!`)
+			local msg = `Provided signal path is invalid!`
+			Logger:warn(msg)
+
+			return false, msg
 		end
 	else
-		Logger:warn(`{fn}: Signal path is nil!`)
+		local msg = `Signal path is nil!`
+		Logger:warn(msg)
+
+		return false, msg
 	end
 end
 
@@ -3566,6 +3985,14 @@ return incrementReward
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+-- Packages
+local Packages = ReplicatedStorage.Packages
+local Sift = require(Packages.Sift)
+
+-- Libraries
+local Libraries = ReplicatedStorage.Shared.Libraries
+local TypeChecker = require(Libraries.TypeChecker)
+
 -- Modules
 local Modules = ReplicatedStorage.Shared.Modules
 local SignalManager = require(Modules.Core.SignalManager)
@@ -3588,10 +4015,10 @@ type Reward = Types.Reward
 	are passed to the signal as a tuple when unpackParams is true, or as a table otherwise.
 	@param player Player - The player receiving the reward
 	@param reward Reward - The reward configuration containing the signal path, decrement amount, and parameters
-	@return nil - Invalid paths or parameters are reported through the logger.
+	@return boolean - Wether the operation was successfull
+	@return string? - Error message in case of failure
 ]=]
-local function setReward(player: Player, reward: Reward): ()
-	local fn = `Set-RewardCase`
+local function setReward(player: Player, reward: Reward): (boolean, string?)
 	local signalPath = reward.path
 
 	if signalPath then
@@ -3601,15 +4028,26 @@ local function setReward(player: Player, reward: Reward): ()
 			local params = reward.params
 
 			if type(params) ~= "table" then
-				Logger:warn(`{fn}: Expected reward.params to be an array!`)
-				return
+				local msg = `Expected reward.params to be an array, got: {TypeChecker.getType(params)}!`
+				Logger:warn(msg)
+
+				return false, msg
+			end
+
+			if next(params) ~= nil and not Sift.Array.isArray(params) then
+				local msg = `Expected reward.params to be an array, got: a "dictionary"!`
+				Logger:warn(msg)
+
+				return false, msg
 			end
 
 			local valuePath = params[1]
 
-			if not fnIsValidPath(valuePath) then
-				Logger:warn(`{fn}: Expected at least one path paramter in reward.params for the target value!`)
-				return
+			if valuePath == nil or not fnIsValidPath(valuePath) then
+				local msg = `Expected at least one path Parameter in reward.params for the target value!`
+				Logger:warn(msg)
+
+				return false, msg
 			end
 
 			table.remove(params, 1)
@@ -3620,11 +4058,19 @@ local function setReward(player: Player, reward: Reward): ()
 			else
 				SignalManager.fireSignal(signal, player, valuePath, newValue, params)
 			end
+
+			return true, nil
 		else
-			Logger:warn(`{fn}: Provided signal path is invalid!`)
+			local msg = `Provided signal path is invalid!`
+			Logger:warn(msg)
+
+			return false, msg
 		end
 	else
-		Logger:warn(`{fn}: Signal path is nil!`)
+		local msg = `Signal path is nil!`
+		Logger:warn(msg)
+
+		return false, msg
 	end
 end
 
@@ -3687,15 +4133,14 @@ type Reward = Types.Reward
 -- Function
 --[=[
 	Applies a single reward, resolving a dynamic value and dispatching to its operation handler.
-	@param player The player receiving the reward
-	@param reward The reward data containing the operation, value, and handler parameters
-	@return Whether the reward handler ran successfully, and an optional error message
+	@param player Player - The player receiving the reward
+	@param reward Reward - The reward data containing the operation, value, and handler parameters
+	@return boolean - Whether every reward was applied successfully
+	@return string? - The first error if any (In case of failure only)
 ]=]
 local function applyReward(player: Player, reward: Reward): (boolean, string?)
-	local fn = `applyReward`
-
 	if typeof(reward) ~= "table" then
-		return false, `{fn}: Invalid reward format`
+		return false, `applyReward: Invalid reward format`
 	end
 
 	reward = Sift.Dictionary.copyDeep(reward)
@@ -3707,19 +4152,30 @@ local function applyReward(player: Player, reward: Reward): (boolean, string?)
 	end
 
 	if not RewardCases[opType] then
-		local msg = `{fn}: Unknown operation type {opType} for reward {reward.name}`
+		local msg = `Unknown operation type {opType} for reward {reward.name}`
 		Logger:warn(msg)
+
 		return false, msg
 	end
 
-	local success, err = pcall(RewardCases[opType], player, reward)
+	local pcallSuccess, rewardSuccess, err = pcall(RewardCases[opType], player, reward)
 
 	table.clear(reward)
 
-	if not success then
-		local msg = `{fn}: Failed to apply reward {tostring(opType)}: {tostring(err)}`
-		Logger:warn(msg)
-		return false, msg
+	if not pcallSuccess then
+		local msg1 = `Failed to apply reward with operation: {tostring(opType)}!`
+		local msg2 = `A runtime error: {tostring(err)}`
+		Logger:warn(`{msg1}\n{msg2}`)
+
+		return false, msg2
+	end
+
+	if not rewardSuccess then
+		local msg1 = `Failed to apply reward with operation: {tostring(opType)}!`
+		local msg2 = `A mal reward format: {tostring(err)}`
+		Logger:warn(`{msg1}\n{msg2}`)
+
+		return false, msg2
 	end
 
 	return true
@@ -3751,32 +4207,62 @@ local Modules = ReplicatedStorage.Shared.Modules
 local fnApplyReward = require(Modules.RuleEngine.Helpers.ApplyReward)
 local Types = require(Modules.Types.Types)
 
+-- Classes
+local Classes = ReplicatedStorage.Shared.Classes
+local Logger = require(Classes.Logger.Class).new(`Rule Engine-ApplyRewards-Module`)
+
 -- Types
 type Reward = Types.Reward
 
 -- Function
 --[=[
-	Applies every reward, continuing after individual failures.
-	@param player The player receiving the rewards
-	@param rewards The rewards to apply, or nil when none are defined
-	@return Whether every reward was applied successfully, and the first error if any failed
+	Applies every reward, aborting operations on the first failure.
+	@param player Player - The player receiving the rewards
+	@param rewards { Reward }? - The rewards to apply, or nil when none are defined
+	@param stopIndex number? - What index to stop at (Wont be applied)
+	@return boolean - Whether every reward was applied successfully
+	@return string? - The first error if any (In case of failure only)
+	@return number? - The failed reward index (In case of failure only)
 ]=]
-local function applyRewards(player: Player, rewards: { Reward }?): (boolean, string?)
+local function applyRewards(player: Player, rewards: { Reward }?, stopIndex: number?): (boolean, string?, number?)
 	if not rewards then
-		return true
+		return true, nil, nil
 	end
 
 	local allSucceeded = true
 	local firstError: string? = nil
-	for _, reward in ipairs(rewards) do
+
+	local operationIndex = 1
+	local rewardName = "Unknown"
+
+	if typeof(stopIndex) ~= "number" then
+		stopIndex = #rewards + 1
+	end
+
+	for index, reward in ipairs(rewards) do
+		if index == stopIndex then
+			break
+		end
+
 		local success, err = fnApplyReward(player, reward)
 		if not success then
 			allSucceeded = false
 			firstError = firstError or err
+
+			operationIndex = index
+			rewardName = reward.name or "Unknown"
+
+			break
 		end
 	end
 
-	return allSucceeded, firstError
+	if not allSucceeded then
+		local msg1 = `Reward "{rewardName}" No. {operationIndex} has failed!`
+		local msg2 = `Err: {firstError}.`
+		Logger:warn(`{msg1}\n{msg2}`)
+	end
+
+	return allSucceeded, firstError, operationIndex
 end
 
 return applyRewards
@@ -3815,11 +4301,11 @@ local currentContext: ContextType = RunService:IsServer() and ENUMS.ContextTypes
 -- Function
 --[=[
 	Ensures that the rule is being evaluated in the correct context (Server, Client, or Both).
-	@param ruleContext The context specified in the rule (Server, Client, Both)
-	@return Whether the context is valid
+	@param ruleContext ContextType - The context specified in the rule (Server, Client, Both)
+	@return boolean - Whether the context is valid
 ]=]
 local function checkContext(ruleContext: ContextType): boolean
-	if typeof(ruleContext) ~= "string" then
+	if ruleContext == nil then
 		return true
 	end
 
@@ -3862,10 +4348,11 @@ type Condition = Types.Condition
 -- Function
 --[=[
 	Evaluates conditions in order, returning on the first condition that fails.
-	@param player The player to evaluate the conditions against
-	@param conditions The conditions to evaluate, or nil
-	@param payload Optional event payload for dynamic values
-	@return Whether all conditions are satisfied, and an optional failure message
+	@param player Player - The player to evaluate the conditions against
+	@param conditions { Conditions } - The conditions to evaluate, or nil
+	@param payload { [string]: any } Optional event payload for dynamic values
+	@return boolean - Whether all conditions are satisfied
+	@return string? - The first error if any (In case of failure only)
 ]=]
 local function solveAllConditions(
 	player: Player,
@@ -3923,10 +4410,10 @@ type Condition = Types.Condition
 -- Function
 --[=[
 	Evaluates a single condition, resolving dynamic values and applying the configured operator.
-	@param player The player to evaluate the condition against
-	@param condition The condition data containing values and an operator
-	@param payload Optional event payload for dynamic values
-	@return Whether the condition is satisfied
+	@param player Player - The player to evaluate the condition against
+	@param condition { Condition } - The condition data containing values and an operator
+	@param payload { [string]: any } - Optional event payload for dynamic values
+	@return boolean - Whether the condition is satisfied
 ]=]
 local function solveCondition(player: Player, condition: Condition, payload: { [string]: any }?): boolean
 	if condition == nil then
@@ -3980,23 +4467,36 @@ return solveCondition
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+-- Packages
+local Packages = ReplicatedStorage.Packages
+local Sift = require(Packages.Sift)
+
+-- Libraries
+local Libraries = ReplicatedStorage.Shared.Libraries
+local TypeChecker = require(Libraries.TypeChecker)
+
 -- Modules
 local Modules = ReplicatedStorage.Shared.Modules
 local fnSolveParam = require(Modules.RuleEngine.Helpers.SolveParam)
 local Types = require(Modules.Types.Types)
 
+-- Classes
+local Classes = ReplicatedStorage.Shared.Classes
+local Logger = require(Classes.Logger.Class).new(`Rule Engine-SolveConditionValue-Module`)
+
 -- Types
 type Param = Types.Param
+type Value = Types.Value
 
 -- Function
 --[=[
 	Resolves a value that may be dynamic, such as a value based on player data or event parameters.
-	@param player The player to resolve the value for
-	@param valueData A direct value or a table containing a parameter and optional callback
-	@param payload Optional event payload used when resolving eventPayload parameters
-	@return The resolved value
+	@param player Player - The player to resolve the value for
+	@param valueData Value - A direct value or a table containing a parameter and optional callback
+	@param payload { [string]: any} - Optional event payload used when resolving eventPayload parameters
+	@return any - The resolved value
 ]=]
-local function solveConditionValue(player: Player, valueData: any, payload: { [string]: any }?): any
+local function solveConditionValue(player: Player, valueData: Value, payload: { [string]: any }?): any
 	if valueData == nil then
 		return nil
 	end
@@ -4004,37 +4504,45 @@ local function solveConditionValue(player: Player, valueData: any, payload: { [s
 	if typeof(valueData) == "table" and valueData.param then
 		local param: Param = valueData.param
 		local params = fnSolveParam(player, param, payload)
-		local returnV = valueData.returnV or 0
-		local returnAsTable = valueData.returnAsTable or false
+		local returnIndex = valueData.returnIndex or nil
 		local result = params
+		local resultWasWrapped = false
 
-		if valueData.callBack then
-			local callBack = valueData.callBack
+		local callBack = valueData.callBack
 
-			if valueData.unpackParams then
-				result = { callBack(table.unpack(params)) }
+		if callBack then
+			if typeof(callBack) == "function" then
+				if valueData.unpackParams then
+					if Sift.Array.isArray(result) then
+						result = { callBack(table.unpack(params)) }
+						resultWasWrapped = true
+					else
+						local msg1 = `Epxected result as an array, but got "{TypeChecker.getType(result)}"!`
+						local msg2 = `Did you forget to set "unpackParams" to false?`
+						Logger:error(`{msg1}\n{msg2}`)
+					end
+				else
+					result = { callBack(params) }
+					resultWasWrapped = true
+				end
 			else
-				result = { callBack(params) }
+				local msg1 = `Epxected "callback" as a callback, got "{TypeChecker.getType(callBack)}"!`
+				local msg2 = `Did you forget to set "callback" to a proper function callback?`
+				Logger:error(`{msg1}\n{msg2}`)
 			end
 		end
 
-		if returnV == 0 then
-			if returnAsTable then
-				if typeof(result) == "table" then
-					return result
-				else
-					return { result }
-				end
+		if typeof(returnIndex) == "number" then
+			if Sift.Array.isArray(result) then
+				return result[returnIndex]
 			else
-				if typeof(result) == "table" then
-					return unpack(result)
-				else
-					return result
-				end
+				local msg1 = `Epxected result as an array, but got "{TypeChecker.getType(result)}"!`
+				local msg2 = `Did you forget to set "returnIndex" to nil?`
+				Logger:error(`{msg1}\n{msg2}`)
 			end
 		else
-			if typeof(result) == "table" then
-				return result[returnV]
+			if resultWasWrapped then
+				return unpack(result)
 			else
 				return result
 			end
@@ -4087,10 +4595,10 @@ type ContextType = Types.ContextType
 -- Function
 --[=[
 	Resolves a parameter based on its type, including data, cache, literal, time, and payload values.
-	@param player The player to resolve the parameter for
-	@param param Parameter data
+	@param player Player - The player to resolve the parameter for
+	@param param Parameter - Parameter data
 	@param payload Optional event payload for eventPayload parameters
-	@return The resolved parameter value
+	@return any - The resolved parameter value
 ]=]
 local function solveParam(player: Player, param: Param, payload: { [string]: any }?): any
 	if param.type == ENUMS.ParamOpTypes.DataPath then
@@ -4127,7 +4635,8 @@ local function solveParam(player: Player, param: Param, payload: { [string]: any
 		return fnWalkPayload(payload, param.path)
 	end
 
-	Logger:error("solveParam: Unknown param type " .. tostring(param.type))
+	Logger:error(`Unknown param type {tostring(param.type)}`)
+	return
 end
 
 return solveParam
@@ -4161,9 +4670,9 @@ type Path = Types.Path
 -- Function
 --[=[
 	Walks an event payload table by path. Missing payload or path fails closed (nil).
-	@param payload Event payload
-	@param path Path segments inside the payload
-	@return The value at the path, or nil
+	@param payload { [string]: any} - Event payload
+	@param path Path - Path segments inside the payload
+	@return any - The value at the path, or nil
 ]=]
 local function walkPayload(payload: { [string]: any }?, path: Path?): any
 	if typeof(payload) ~= "table" or typeof(path) ~= "table" then
@@ -4193,6 +4702,1431 @@ return walkPayload
 								<int64 name="SourceAssetId">-1</int64>
 								<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 								<UniqueId name="UniqueId">5333c15553ba16e90adb1566000012e8</UniqueId>
+							</Properties>
+						</Item>
+					</Item>
+					<Item class="ModuleScript" referent="RBXFD47025F2E15432390989A5B5E85459A">
+						<Properties>
+							<Content name="LinkedSource"><null></null></Content>
+							<ProtectedString name="Source"><![CDATA[--!strict
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Classes
+local Classes = ReplicatedStorage.Shared.Classes
+local Logger = require(Classes.Logger.Class).new(`RuleEngineTests`)
+
+-- References
+local Harness = require(script.Harness)
+
+-- Types
+type SpecFn = Harness.SpecFn
+
+-- Variables
+local suites: { { name: string, spec: SpecFn } } = {
+	{ name = "Engine", spec = require(script["Engine.spec"]) },
+	{ name = "Conditions", spec = require(script["Conditions.spec"]) },
+	{ name = "RewardCases", spec = require(script["RewardCases.spec"]) },
+	{ name = "Helpers", spec = require(script["Helpers.spec"]) },
+	{ name = "Samples", spec = require(script["Samples.spec"]) },
+}
+
+-- Module
+local Tests = {}
+
+-- Public
+--[=[
+	Run every Rule Engine spec and log a pass/fail summary
+	@return boolean - Whether every test passed
+	@return number - Passed count
+	@return number - Failed count
+]=]
+function Tests.run(): (boolean, number, number)
+	local passed = 0
+	local failed = 0
+	local failures: { string } = {}
+
+	Logger:print("Running Rule Engine tests...")
+
+	for _, suite in ipairs(suites) do
+		Logger:print(`[{suite.name}]`)
+
+		local function it(name: string, fn: () -> ()): ()
+			local ok, err = pcall(fn)
+			if ok then
+				passed += 1
+				Logger:print(`  PASS  {name}`)
+			else
+				failed += 1
+				local message = `{suite.name} / {name}: {tostring(err)}`
+				table.insert(failures, message)
+				Logger:warn(`  FAIL  {name}\n    {tostring(err)}`)
+			end
+		end
+
+		local specOk, specErr = pcall(function()
+			suite.spec(it, Harness.expect)
+		end)
+
+		if not specOk then
+			failed += 1
+			local message = `{suite.name}: suite error: {tostring(specErr)}`
+			table.insert(failures, message)
+			Logger:warn(`  FAIL  suite could not run\n    {tostring(specErr)}`)
+		end
+	end
+
+	if failed == 0 then
+		Logger:print(`Rule Engine tests passed: {passed} passed, 0 failed`)
+	else
+		Logger:warn(`Rule Engine tests failed: {passed} passed, {failed} failed`)
+		for _, message in ipairs(failures) do
+			Logger:warn(`  - {message}`)
+		end
+	end
+
+	return failed == 0, passed, failed
+end
+
+return Tests
+]]></ProtectedString>
+							<string name="ScriptGuid">{6865D5A6-A13B-4E3E-835F-5E1172B5A1E4}</string>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="DefinesCapabilities">false</bool>
+							<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+							<string name="Name">Tests</string>
+							<BinaryString name="SerializedOverrides"></BinaryString>
+							<int64 name="SourceAssetId">-1</int64>
+							<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+							<UniqueId name="UniqueId">120b36642ab4d1160adc70b700002585</UniqueId>
+						</Properties>
+						<Item class="ModuleScript" referent="RBX80D13D8EEBCF4E95A975E83279B2F725">
+							<Properties>
+								<Content name="LinkedSource"><null></null></Content>
+								<ProtectedString name="Source"><![CDATA[--!strict
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Modules
+local Modules = ReplicatedStorage.Shared.Modules
+local fnSolveAllConditions = require(Modules.RuleEngine.Helpers.SolveAllConditions)
+local fnSolveCondition = require(Modules.RuleEngine.Helpers.SolveCondition)
+local RuleEngine = require(Modules.RuleEngine)
+local ENUMS = require(Modules.Data.ENUMS)
+local Harness = require(script.Parent.Harness)
+
+-- Types
+type ItFn = Harness.ItFn
+type ExpectFn = Harness.ExpectFn
+
+-- Spec
+return function(it: ItFn, expect: ExpectFn): ()
+	local function check(opType: number, value1: any, value2: any): boolean
+		local player = Harness.makePlayer()
+		local ok = fnSolveCondition(player, {
+			name = "op",
+			value1 = value1,
+			value2 = value2,
+			opType = opType,
+		})
+		player:Destroy()
+		return ok
+	end
+
+	it("evaluates Equal", function()
+		expect(check(ENUMS.ConditionOpTypes.Equal, 4, 4)).toBeTrue()
+		expect(check(ENUMS.ConditionOpTypes.Equal, 4, 5)).toBeFalse()
+	end)
+
+	it("evaluates NotEqual", function()
+		expect(check(ENUMS.ConditionOpTypes.NotEqual, 4, 5)).toBeTrue()
+		expect(check(ENUMS.ConditionOpTypes.NotEqual, 4, 4)).toBeFalse()
+	end)
+
+	it("evaluates GreaterThan", function()
+		expect(check(ENUMS.ConditionOpTypes.GreaterThan, 5, 4)).toBeTrue()
+		expect(check(ENUMS.ConditionOpTypes.GreaterThan, 4, 4)).toBeFalse()
+	end)
+
+	it("evaluates GreaterThanOrEqual", function()
+		expect(check(ENUMS.ConditionOpTypes.GreaterThanOrEqual, 4, 4)).toBeTrue()
+		expect(check(ENUMS.ConditionOpTypes.GreaterThanOrEqual, 3, 4)).toBeFalse()
+	end)
+
+	it("evaluates LessThan", function()
+		expect(check(ENUMS.ConditionOpTypes.LessThan, 3, 4)).toBeTrue()
+		expect(check(ENUMS.ConditionOpTypes.LessThan, 4, 4)).toBeFalse()
+	end)
+
+	it("evaluates LessThanOrEqual", function()
+		expect(check(ENUMS.ConditionOpTypes.LessThanOrEqual, 4, 4)).toBeTrue()
+		expect(check(ENUMS.ConditionOpTypes.LessThanOrEqual, 5, 4)).toBeFalse()
+	end)
+
+	it("treats a nil condition as satisfied", function()
+		local player = Harness.makePlayer()
+		expect(fnSolveCondition(player, nil :: any)).toBeTrue()
+		player:Destroy()
+	end)
+
+	it("fails closed on an unknown operator", function()
+		expect(check(999, 1, 1)).toBeFalse()
+	end)
+
+	it("stops on the first failing condition and returns onFalse", function()
+		local player = Harness.makePlayer()
+		local ok, err = fnSolveAllConditions(player, {
+			{
+				name = "first",
+				value1 = 1,
+				value2 = 1,
+				opType = ENUMS.ConditionOpTypes.Equal,
+			},
+			{
+				name = "second",
+				value1 = 1,
+				value2 = 2,
+				opType = ENUMS.ConditionOpTypes.Equal,
+				onFalse = "second failed",
+			},
+			{
+				name = "third",
+				value1 = 1,
+				value2 = 1,
+				opType = ENUMS.ConditionOpTypes.Equal,
+				onFalse = "third failed",
+			},
+		})
+
+		expect(ok).toBeFalse()
+		expect(err).toBe("second failed")
+		player:Destroy()
+	end)
+
+	it("uses the condition name when onFalse is omitted", function()
+		local player = Harness.makePlayer()
+		local ok, err = fnSolveAllConditions(player, {
+			{
+				name = "Need five",
+				value1 = 1,
+				value2 = 5,
+				opType = ENUMS.ConditionOpTypes.Equal,
+			},
+		})
+
+		expect(ok).toBeFalse()
+		expect(err).toContain("Need five")
+		player:Destroy()
+	end)
+
+	it("resolves a literal Value param", function()
+		local player = Harness.makePlayer()
+		local ok = fnSolveCondition(player, {
+			name = "value param",
+			value1 = {
+				param = {
+					type = ENUMS.ParamOpTypes.Value,
+					value = 8,
+				},
+			},
+			value2 = 8,
+			opType = ENUMS.ConditionOpTypes.Equal,
+		})
+
+		expect(ok).toBeTrue()
+		player:Destroy()
+	end)
+
+	it("resolves a Now param as a timestamp", function()
+		local player = Harness.makePlayer()
+		local ok = fnSolveCondition(player, {
+			name = "now",
+			value1 = {
+				param = {
+					type = ENUMS.ParamOpTypes.Now,
+				},
+			},
+			value2 = os.time() - 1,
+			opType = ENUMS.ConditionOpTypes.GreaterThanOrEqual,
+		})
+
+		expect(ok).toBeTrue()
+		player:Destroy()
+	end)
+
+	it("runs a callback over resolved params", function()
+		local player = Harness.makePlayer()
+		local ok = fnSolveCondition(player, {
+			name = "callback",
+			value1 = {
+				param = {
+					type = ENUMS.ParamOpTypes.Value,
+					value = { 10, 20 },
+				},
+				callBack = function(values: { number }): number
+					return values[1] + values[2]
+				end,
+				unpackParams = false,
+			},
+			value2 = 30,
+			opType = ENUMS.ConditionOpTypes.Equal,
+		})
+
+		expect(ok).toBeTrue()
+		player:Destroy()
+	end)
+
+	it("unpacks params into a callback when requested", function()
+		local player = Harness.makePlayer()
+		local ok = fnSolveCondition(player, {
+			name = "unpack callback",
+			value1 = {
+				param = {
+					type = ENUMS.ParamOpTypes.Value,
+					value = { 2, 3 },
+				},
+				callBack = function(a: number, b: number): number
+					return a * b
+				end,
+				unpackParams = true,
+			},
+			value2 = 6,
+			opType = ENUMS.ConditionOpTypes.Equal,
+		})
+
+		expect(ok).toBeTrue()
+		player:Destroy()
+	end)
+
+	it("returns a callback result by index", function()
+		local player = Harness.makePlayer()
+		local ok = fnSolveCondition(player, {
+			name = "returnIndex",
+			value1 = {
+				param = {
+					type = ENUMS.ParamOpTypes.Value,
+					value = 9,
+				},
+				callBack = function(value: number): (number, number)
+					return value, value * 2
+				end,
+				returnIndex = 2,
+			},
+			value2 = 18,
+			opType = ENUMS.ConditionOpTypes.Equal,
+		})
+
+		expect(ok).toBeTrue()
+		player:Destroy()
+	end)
+
+	it("reads player data and cache params", function()
+		local player = Harness.makePlayer({ coins = 12, points = 7 })
+		local ok, err = RuleEngine.checkConditions(player, {
+			context = ENUMS.ContextTypes.Server,
+			conditions = {
+				{
+					name = "coins",
+					value1 = { param = { type = ENUMS.ParamOpTypes.DataPath, path = { "leaderstats", "Coins" } } },
+					value2 = 12,
+					opType = ENUMS.ConditionOpTypes.Equal,
+					onFalse = "coins mismatch",
+				},
+				{
+					name = "points",
+					value1 = { param = { type = ENUMS.ParamOpTypes.CachePath, path = { "SessionStats", "Points" } } },
+					value2 = 7,
+					opType = ENUMS.ConditionOpTypes.Equal,
+					onFalse = "points mismatch",
+				},
+			},
+		})
+
+		expect(ok).toBeTrue()
+		expect(err).toBeNil()
+		player:Destroy()
+	end)
+
+	it("passes an empty condition list", function()
+		local player = Harness.makePlayer()
+		local ok = fnSolveAllConditions(player, {})
+		expect(ok).toBeTrue()
+		player:Destroy()
+	end)
+end
+]]></ProtectedString>
+								<string name="ScriptGuid">{6B822132-9D35-4D63-9445-31FBF88CE809}</string>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+								<string name="Name">Conditions.spec</string>
+								<BinaryString name="SerializedOverrides"></BinaryString>
+								<int64 name="SourceAssetId">-1</int64>
+								<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+								<UniqueId name="UniqueId">120b36642ab4d1160adc70b700002586</UniqueId>
+							</Properties>
+						</Item>
+						<Item class="ModuleScript" referent="RBX1A87C0BD58C74BD59B36D45B08EF56B7">
+							<Properties>
+								<Content name="LinkedSource"><null></null></Content>
+								<ProtectedString name="Source"><![CDATA[--!strict
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Modules
+local Modules = ReplicatedStorage.Shared.Modules
+local SharedRewards = require(Modules.Data.Rewards._Shared)
+local RuleEngine = require(Modules.RuleEngine)
+local PATHS = require(Modules.Data.PATHS)
+local ENUMS = require(Modules.Data.ENUMS)
+local Harness = require(script.Parent.Harness)
+
+-- Types
+type ItFn = Harness.ItFn
+type ExpectFn = Harness.ExpectFn
+
+-- Variables
+local dataUpdateSignal = PATHS.signals.dataService.server.updatePlayerData
+
+-- Spec
+return function(it: ItFn, expect: ExpectFn): ()
+	it("passes a rule with no conditions and no rewards", function()
+		local player = Harness.makePlayer()
+		local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.excuteRule(player, {
+			context = ENUMS.ContextTypes.Server,
+		})
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeTrue()
+		expect(rollbackApplied).toBeNil()
+		expect(err).toBeNil()
+		player:Destroy()
+	end)
+
+	it("passes a rule with empty condition and reward lists", function()
+		local player = Harness.makePlayer()
+		local conditionsPassed, rewardsApplied = RuleEngine.excuteRule(player, {
+			context = ENUMS.ContextTypes.Server,
+			conditions = {},
+			rewards = {},
+		})
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeTrue()
+		player:Destroy()
+	end)
+
+	it("passes Both context on the server", function()
+		local player = Harness.makePlayer()
+		local conditionsPassed, rewardsApplied = RuleEngine.excuteRule(player, {
+			context = ENUMS.ContextTypes.Both,
+		})
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeTrue()
+		player:Destroy()
+	end)
+
+	it("rejects Client context on the server", function()
+		local player = Harness.makePlayer()
+		local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.excuteRule(player, {
+			context = ENUMS.ContextTypes.Client,
+			conditions = {
+				{
+					name = "Always",
+					value1 = 1,
+					value2 = 1,
+					opType = ENUMS.ConditionOpTypes.Equal,
+				},
+			},
+		})
+
+		expect(conditionsPassed).toBeFalse()
+		expect(rewardsApplied).toBeFalse()
+		expect(rollbackApplied).toBeNil()
+		expect(err).toContain("Context mismatch")
+		player:Destroy()
+	end)
+
+	it("applies function rewards when function conditions pass", function()
+		local player = Harness.makePlayer()
+		local rewarded = false
+		local conditionsPassed, rewardsApplied = RuleEngine.excuteRule(player, {
+			context = ENUMS.ContextTypes.Server,
+			conditions = function(_player: Player): (boolean, string?)
+				return true, nil
+			end,
+			rewards = function(_player: Player): (boolean, string?)
+				rewarded = true
+				return true, nil
+			end,
+		})
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeTrue()
+		expect(rewarded).toBeTrue()
+		player:Destroy()
+	end)
+
+	it("does not apply rewards when function conditions fail", function()
+		local player = Harness.makePlayer()
+		local rewarded = false
+		local conditionsPassed, rewardsApplied, _, err = RuleEngine.excuteRule(player, {
+			context = ENUMS.ContextTypes.Server,
+			conditions = function(_player: Player): (boolean, string?)
+				return false, "nope"
+			end,
+			rewards = function(_player: Player): (boolean, string?)
+				rewarded = true
+				return true, nil
+			end,
+		})
+
+		expect(conditionsPassed).toBeFalse()
+		expect(rewardsApplied).toBeFalse()
+		expect(rewarded).toBeFalse()
+		expect(err).toBe("nope")
+		player:Destroy()
+	end)
+
+	it("returns a runtime error when function conditions throw", function()
+		local player = Harness.makePlayer()
+		local conditionsPassed, rewardsApplied, _, err = RuleEngine.excuteRule(player, {
+			context = ENUMS.ContextTypes.Server,
+			conditions = function(_player: Player): (boolean, string?)
+				error("condition boom")
+			end,
+		})
+
+		expect(conditionsPassed).toBeFalse()
+		expect(rewardsApplied).toBeFalse()
+		expect(err).toContain("condition boom")
+		player:Destroy()
+	end)
+
+	it("rejects conditions that are neither a function nor an array", function()
+		local player = Harness.makePlayer()
+		local ok, err = RuleEngine.checkConditions(player, {
+			context = ENUMS.ContextTypes.Server,
+			conditions = { name = "dictionary" } :: any,
+		})
+
+		expect(ok).toBeFalse()
+		expect(err).toContain("function")
+		player:Destroy()
+	end)
+
+	it("rejects rewards that are neither a function nor an array", function()
+		local player = Harness.makePlayer()
+		local ok, err = RuleEngine.applyRewards(player, {
+			context = ENUMS.ContextTypes.Server,
+			rewards = { name = "dictionary" } :: any,
+		})
+
+		expect(ok).toBeFalse()
+		expect(err).toContain("function")
+		player:Destroy()
+	end)
+
+	it("fails function rewards that return false", function()
+		local player = Harness.makePlayer()
+		local ok, err = RuleEngine.applyRewards(player, {
+			context = ENUMS.ContextTypes.Server,
+			rewards = function(_player: Player): (boolean, string?)
+				return false, "reward refused"
+			end,
+		})
+
+		expect(ok).toBeFalse()
+		expect(err).toBe("reward refused")
+		player:Destroy()
+	end)
+
+	it("rolls back applied rewards when a later reward fails", function()
+		local player = Harness.makePlayer({ coins = 5 })
+		local conditionsPassed, rewardsApplied, rollbackApplied = RuleEngine.excuteRule(player, {
+			context = ENUMS.ContextTypes.Server,
+			rewards = {
+				SharedRewards.reward("coins", 10, dataUpdateSignal),
+				{
+					name = "Broken",
+					opType = 999,
+					value = 0,
+					path = dataUpdateSignal,
+					params = { PATHS.userData.coins },
+				},
+			},
+			rollbackRewards = {
+				SharedRewards.payment("coins", 10, dataUpdateSignal),
+			},
+		})
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeFalse()
+		expect(rollbackApplied).toBeTrue()
+		expect(Harness.getCoins(player)).toBe(5)
+		player:Destroy()
+	end)
+
+	it("does not roll back when the first reward is the one that fails", function()
+		local player = Harness.makePlayer({ coins = 5 })
+		local rolledBack = false
+		local conditionsPassed, rewardsApplied, rollbackApplied = RuleEngine.excuteRule(player, {
+			context = ENUMS.ContextTypes.Server,
+			rewards = {
+				{
+					name = "Broken",
+					opType = 999,
+					value = 0,
+					path = dataUpdateSignal,
+					params = { PATHS.userData.coins },
+				},
+			},
+			rollbackRewards = function(_player: Player): (boolean, string?)
+				rolledBack = true
+				return true, nil
+			end,
+		})
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeFalse()
+		expect(rollbackApplied).toBeFalse()
+		expect(rolledBack).toBeFalse()
+		expect(Harness.getCoins(player)).toBe(5)
+		player:Destroy()
+	end)
+
+	it("treats a missing rollback list as a successful rollback", function()
+		local player = Harness.makePlayer({ coins = 5 })
+		local conditionsPassed, rewardsApplied, rollbackApplied = RuleEngine.excuteRule(player, {
+			context = ENUMS.ContextTypes.Server,
+			rewards = {
+				SharedRewards.reward("coins", 10, dataUpdateSignal),
+				{
+					name = "Broken",
+					opType = 999,
+					value = 0,
+					path = dataUpdateSignal,
+					params = { PATHS.userData.coins },
+				},
+			},
+		})
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeFalse()
+		expect(rollbackApplied).toBeTrue()
+		expect(Harness.getCoins(player)).toBe(15)
+		player:Destroy()
+	end)
+
+	it("fails rollback when the rollback function returns false", function()
+		local player = Harness.makePlayer({ coins = 5 })
+		local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.excuteRule(player, {
+			context = ENUMS.ContextTypes.Server,
+			rewards = {
+				SharedRewards.reward("coins", 10, dataUpdateSignal),
+				{
+					name = "Broken",
+					opType = 999,
+					value = 0,
+					path = dataUpdateSignal,
+					params = { PATHS.userData.coins },
+				},
+			},
+			rollbackRewards = function(_player: Player): (boolean, string?)
+				return false, "rollback refused"
+			end,
+		})
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeFalse()
+		expect(rollbackApplied).toBeFalse()
+		expect(err).toBe("A mal ruledata: rollback refused")
+		expect(Harness.getCoins(player)).toBe(15)
+		player:Destroy()
+	end)
+
+	it("passes event payload values into array conditions", function()
+		local player = Harness.makePlayer()
+		local ok, err = RuleEngine.checkConditions(player, {
+			context = ENUMS.ContextTypes.Server,
+			conditions = {
+				{
+					name = "Payload amount",
+					value1 = {
+						param = {
+							type = ENUMS.ParamOpTypes.EventPayload,
+							path = { "amount" },
+						},
+					},
+					value2 = 10,
+					opType = ENUMS.ConditionOpTypes.Equal,
+					onFalse = "amount mismatch",
+				},
+			},
+		}, { amount = 10 })
+
+		expect(ok).toBeTrue()
+		expect(err).toBeNil()
+		player:Destroy()
+	end)
+end
+]]></ProtectedString>
+								<string name="ScriptGuid">{10CCE9E8-8529-447C-A2AD-10233348952E}</string>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+								<string name="Name">Engine.spec</string>
+								<BinaryString name="SerializedOverrides"></BinaryString>
+								<int64 name="SourceAssetId">-1</int64>
+								<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+								<UniqueId name="UniqueId">120b36642ab4d1160adc70b700002587</UniqueId>
+							</Properties>
+						</Item>
+						<Item class="ModuleScript" referent="RBX95373894BB6644F39942E9AB462E368B">
+							<Properties>
+								<Content name="LinkedSource"><null></null></Content>
+								<ProtectedString name="Source"><![CDATA[--!strict
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Modules
+local Modules = ReplicatedStorage.Shared.Modules
+local fnTraversePath = require(Modules.fn.traversePath)
+local PATHS = require(Modules.Data.PATHS)
+
+-- Types
+export type Expectation = {
+	toBe: (expected: any) -> (),
+	toBeNil: () -> (),
+	toBeTrue: () -> (),
+	toBeFalse: () -> (),
+	toContain: (needle: string) -> (),
+}
+
+export type ItFn = (name: string, fn: () -> ()) -> ()
+export type ExpectFn = (actual: any) -> Expectation
+export type SpecFn = (it: ItFn, expect: ExpectFn) -> ()
+
+export type PlayerStats = {
+	coins: number?,
+	points: number?,
+	playtime: number?,
+}
+
+-- Module
+local Harness = {}
+
+-- Functions
+-- Private
+local function stringify(value: any): string
+	if typeof(value) == "string" then
+		return `"{value}"`
+	end
+
+	return tostring(value)
+end
+
+-- Public
+--[=[
+	Build an expectation object for a value
+	@param actual any - The value under test
+	@return Expectation
+]=]
+function Harness.expect(actual: any): Expectation
+	local expectation = {}
+
+	function expectation.toBe(expected: any): ()
+		if actual ~= expected then
+			error(`Expected {stringify(expected)}, got {stringify(actual)}`, 2)
+		end
+	end
+
+	function expectation.toBeNil(): ()
+		if actual ~= nil then
+			error(`Expected nil, got {stringify(actual)}`, 2)
+		end
+	end
+
+	function expectation.toBeTrue(): ()
+		if actual ~= true then
+			error(`Expected true, got {stringify(actual)}`, 2)
+		end
+	end
+
+	function expectation.toBeFalse(): ()
+		if actual ~= false then
+			error(`Expected false, got {stringify(actual)}`, 2)
+		end
+	end
+
+	function expectation.toContain(needle: string): ()
+		if typeof(actual) ~= "string" or string.find(actual, needle, 1, true) == nil then
+			error(`Expected {stringify(actual)} to contain {stringify(needle)}`, 2)
+		end
+	end
+
+	return expectation
+end
+
+--[=[
+	Create a folder that mimics the player data tree used by Data/Cache services
+	@param stats PlayerStats? - Starting currency values
+	@return any - The fake player tree
+]=]
+function Harness.makePlayer(stats: PlayerStats?): any
+	local values = stats or {} :: PlayerStats
+
+	local player = Instance.new("Folder")
+	player.Name = "TestPlayer"
+
+	local leaderstats = Instance.new("Folder")
+	leaderstats.Name = "leaderstats"
+	leaderstats.Parent = player
+
+	local coins = Instance.new("NumberValue")
+	coins.Name = "Coins"
+	coins.Value = values.coins or 0
+	coins.Parent = leaderstats
+
+	local sessionStats = Instance.new("Folder")
+	sessionStats.Name = "SessionStats"
+	sessionStats.Parent = player
+
+	local points = Instance.new("NumberValue")
+	points.Name = "Points"
+	points.Value = values.points or 0
+	points.Parent = sessionStats
+
+	local playtime = Instance.new("NumberValue")
+	playtime.Name = "Playtime"
+	playtime.Value = values.playtime or 0
+	playtime.Parent = sessionStats
+
+	local backpack = Instance.new("Folder")
+	backpack.Name = "Backpack"
+	backpack.Parent = player
+
+	return player
+end
+
+--[=[
+	Read a NumberValue at a path under the fake player
+	@param player any - Fake player tree
+	@param path { string } - Path segments
+	@return number
+]=]
+function Harness.getNumber(player: any, path: { string }): number
+	local instance = fnTraversePath(player, path)
+	if typeof(instance) ~= "Instance" or not instance:IsA("NumberValue") then
+		error(`Expected a NumberValue at path {table.concat(path, ".")}`, 2)
+	end
+
+	return instance.Value
+end
+
+--[=[
+	Read the fake player's coins
+	@param player any - Fake player tree
+	@return number
+]=]
+function Harness.getCoins(player: any): number
+	return Harness.getNumber(player, PATHS.userData.coins)
+end
+
+--[=[
+	Read the fake player's points
+	@param player any - Fake player tree
+	@return number
+]=]
+function Harness.getPoints(player: any): number
+	return Harness.getNumber(player, PATHS.userCache.points)
+end
+
+return Harness
+]]></ProtectedString>
+								<string name="ScriptGuid">{0ECD813A-6DD5-4F98-A316-DFFB3FC11CAD}</string>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+								<string name="Name">Harness</string>
+								<BinaryString name="SerializedOverrides"></BinaryString>
+								<int64 name="SourceAssetId">-1</int64>
+								<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+								<UniqueId name="UniqueId">120b36642ab4d1160adc70b700002588</UniqueId>
+							</Properties>
+						</Item>
+						<Item class="ModuleScript" referent="RBXA08BDBFCD83A4E3A9F8ED34E3D8065C1">
+							<Properties>
+								<Content name="LinkedSource"><null></null></Content>
+								<ProtectedString name="Source"><![CDATA[--!strict
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Modules
+local Modules = ReplicatedStorage.Shared.Modules
+local fnCheckContext = require(Modules.RuleEngine.Helpers.CheckContext)
+local fnWalkPayload = require(Modules.RuleEngine.Helpers.WalkPayload)
+local fnSolveParam = require(Modules.RuleEngine.Helpers.SolveParam)
+local ENUMS = require(Modules.Data.ENUMS)
+local Harness = require(script.Parent.Harness)
+
+-- Types
+type ItFn = Harness.ItFn
+type ExpectFn = Harness.ExpectFn
+
+-- Spec
+return function(it: ItFn, expect: ExpectFn): ()
+	it("allows Server and Both context on the server", function()
+		expect(fnCheckContext(ENUMS.ContextTypes.Server)).toBeTrue()
+		expect(fnCheckContext(ENUMS.ContextTypes.Both)).toBeTrue()
+	end)
+
+	it("rejects Client context on the server", function()
+		expect(fnCheckContext(ENUMS.ContextTypes.Client)).toBeFalse()
+	end)
+
+	it("allows a missing context", function()
+		expect(fnCheckContext(nil :: any)).toBeTrue()
+	end)
+
+	it("walks a nested payload path", function()
+		expect(fnWalkPayload({
+			order = {
+				item = {
+					id = "sword",
+				},
+			},
+		}, { "order", "item", "id" })).toBe("sword")
+	end)
+
+	it("returns nil when the payload path is missing", function()
+		expect(fnWalkPayload({ order = {} }, { "order", "item", "id" })).toBeNil()
+	end)
+
+	it("fails closed when payload or path is not a table", function()
+		expect(fnWalkPayload(nil, { "a" })).toBeNil()
+		expect(fnWalkPayload({ a = 1 }, nil)).toBeNil()
+		expect(fnWalkPayload("nope" :: any, { "a" })).toBeNil()
+	end)
+
+	it("stops walking when a payload node is not a table", function()
+		expect(fnWalkPayload({ a = 1 }, { "a", "b" })).toBeNil()
+	end)
+
+	it("resolves Value and EventPayload params", function()
+		local player = Harness.makePlayer()
+		expect(fnSolveParam(player, {
+			type = ENUMS.ParamOpTypes.Value,
+			value = "literal",
+		})).toBe("literal")
+		expect(fnSolveParam(player, {
+			type = ENUMS.ParamOpTypes.EventPayload,
+			path = { "tier" },
+		}, { tier = "gold" })).toBe("gold")
+		player:Destroy()
+	end)
+
+	it("resolves Now as os.time", function()
+		local player = Harness.makePlayer()
+		local now = fnSolveParam(player, { type = ENUMS.ParamOpTypes.Now })
+		expect(typeof(now)).toBe("number")
+		expect((now :: number) >= os.time() - 1).toBeTrue()
+		player:Destroy()
+	end)
+
+	it("resolves DataPath and CachePath from the player tree", function()
+		local player = Harness.makePlayer({ coins = 9, points = 2 })
+		expect(fnSolveParam(player, {
+			type = ENUMS.ParamOpTypes.DataPath,
+			path = { "leaderstats", "Coins" },
+		})).toBe(9)
+		expect(fnSolveParam(player, {
+			type = ENUMS.ParamOpTypes.CachePath,
+			path = { "SessionStats", "Points" },
+		})).toBe(2)
+		player:Destroy()
+	end)
+end
+]]></ProtectedString>
+								<string name="ScriptGuid">{A0C122F3-454B-4BB5-A58A-F32E44DA5FFC}</string>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+								<string name="Name">Helpers.spec</string>
+								<BinaryString name="SerializedOverrides"></BinaryString>
+								<int64 name="SourceAssetId">-1</int64>
+								<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+								<UniqueId name="UniqueId">120b36642ab4d1160adc70b700002589</UniqueId>
+							</Properties>
+						</Item>
+						<Item class="ModuleScript" referent="RBX0C7153C9466B42ACB6980E9C2629A4C3">
+							<Properties>
+								<Content name="LinkedSource"><null></null></Content>
+								<ProtectedString name="Source"><![CDATA[--!strict
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Modules
+local Modules = ReplicatedStorage.Shared.Modules
+local SharedRewards = require(Modules.Data.Rewards._Shared)
+local SignalManager = require(Modules.Core.SignalManager)
+local fnApplyReward = require(Modules.RuleEngine.Helpers.ApplyReward)
+local fnApplyRewards = require(Modules.RuleEngine.Helpers.ApplyRewards)
+local RuleEngine = require(Modules.RuleEngine)
+local CommsHub = require(Modules.Core.CommsHub)
+local PATHS = require(Modules.Data.PATHS)
+local ENUMS = require(Modules.Data.ENUMS)
+local Harness = require(script.Parent.Harness)
+
+-- Types
+type ItFn = Harness.ItFn
+type ExpectFn = Harness.ExpectFn
+
+-- Variables
+local dataUpdateSignal = PATHS.signals.dataService.server.updatePlayerData
+local dataSetSignal = PATHS.signals.dataService.server.setPlayerData
+local cacheUpdateSignal = PATHS.signals.cacheService.server.updatePlayerData
+local cacheSetSignal = PATHS.signals.cacheService.server.setPlayerData
+
+-- Spec
+return function(it: ItFn, expect: ExpectFn): ()
+	it("increments player data", function()
+		local player = Harness.makePlayer({ coins = 4 })
+		local ok, err = fnApplyReward(player, SharedRewards.reward("coins", 6, dataUpdateSignal))
+
+		expect(ok).toBeTrue()
+		expect(err).toBeNil()
+		expect(Harness.getCoins(player)).toBe(10)
+		player:Destroy()
+	end)
+
+	it("decrements cache data", function()
+		local player = Harness.makePlayer({ points = 20 })
+		local ok = fnApplyReward(player, SharedRewards.cachePayment("points", 7, cacheUpdateSignal))
+
+		expect(ok).toBeTrue()
+		expect(Harness.getPoints(player)).toBe(13)
+		player:Destroy()
+	end)
+
+	it("sets player data", function()
+		local player = Harness.makePlayer({ coins = 3 })
+		local ok = fnApplyReward(player, SharedRewards.set("coins", 50, dataSetSignal))
+
+		expect(ok).toBeTrue()
+		expect(Harness.getCoins(player)).toBe(50)
+		player:Destroy()
+	end)
+
+	it("sets cache data", function()
+		local player = Harness.makePlayer({ points = 3 })
+		local ok = fnApplyReward(player, SharedRewards.cacheSet("points", 1, cacheSetSignal))
+
+		expect(ok).toBeTrue()
+		expect(Harness.getPoints(player)).toBe(1)
+		player:Destroy()
+	end)
+
+	it("resolves a dynamic increment value", function()
+		local player = Harness.makePlayer({ coins = 1 })
+		local ok = fnApplyReward(player, {
+			name = "Dynamic increment",
+			opType = ENUMS.RewardOpTypes.Increment,
+			value = {
+				param = {
+					type = ENUMS.ParamOpTypes.Value,
+					value = 4,
+				},
+			},
+			path = dataUpdateSignal,
+			params = { PATHS.userData.coins },
+		})
+
+		expect(ok).toBeTrue()
+		expect(Harness.getCoins(player)).toBe(5)
+		player:Destroy()
+	end)
+
+	it("does not mutate the original reward params array", function()
+		local player = Harness.makePlayer({ coins = 0 })
+		local params = { PATHS.userData.coins }
+		local ok = fnApplyReward(player, {
+			name = "Increment",
+			opType = ENUMS.RewardOpTypes.Increment,
+			value = 1,
+			path = dataUpdateSignal,
+			params = params,
+		})
+
+		expect(ok).toBeTrue()
+		expect(#params).toBe(1)
+		player:Destroy()
+	end)
+
+	it("fires a signal with unpacked params", function()
+		CommsHub.signals.TestHarness = {
+			ping = "TestHarness:Ping",
+		}
+
+		local received: { any } = {}
+		local connection = SignalManager.connectToSignal("TestHarness:Ping", function(...: any)
+			received = { ... }
+		end)
+
+		local player = Harness.makePlayer()
+		local ok = fnApplyReward(player, SharedRewards.fireSignal("ping", { "signals", "TestHarness", "ping" }, {
+			"Sword",
+			"extra",
+		}, true))
+
+		expect(ok).toBeTrue()
+		expect(received[1]).toBe(player)
+		expect(received[2]).toBe("Sword")
+		expect(received[3]).toBe("extra")
+
+		if connection then
+			connection:Disconnect()
+		end
+		player:Destroy()
+	end)
+
+	it("fires a signal with packed params", function()
+		CommsHub.signals.TestHarness = {
+			packed = "TestHarness:Packed",
+		}
+
+		local received: { any } = {}
+		local connection = SignalManager.connectToSignal("TestHarness:Packed", function(...: any)
+			received = { ... }
+		end)
+
+		local player = Harness.makePlayer()
+		local ok = fnApplyReward(player, SharedRewards.fireSignal("packed", { "signals", "TestHarness", "packed" }, {
+			"Sword",
+			"extra",
+		}, false))
+
+		expect(ok).toBeTrue()
+		expect(received[1]).toBe(player)
+		expect(typeof(received[2])).toBe("table")
+		expect((received[2] :: { any })[1]).toBe("Sword")
+		expect((received[2] :: { any })[2]).toBe("extra")
+
+		if connection then
+			connection:Disconnect()
+		end
+		player:Destroy()
+	end)
+
+	it("rejects an unknown reward operation", function()
+		local player = Harness.makePlayer()
+		local ok, err = fnApplyReward(player, {
+			name = "Unknown",
+			opType = 999,
+			value = 1,
+			path = dataUpdateSignal,
+			params = { PATHS.userData.coins },
+		})
+
+		expect(ok).toBeFalse()
+		expect(err).toContain("Unknown operation type")
+		player:Destroy()
+	end)
+
+	it("rejects increment without a target path", function()
+		local player = Harness.makePlayer()
+		local ok, err = fnApplyReward(player, {
+			name = "Increment",
+			opType = ENUMS.RewardOpTypes.Increment,
+			value = 1,
+			path = dataUpdateSignal,
+			params = {},
+		})
+
+		expect(ok).toBeFalse()
+		expect(err).toContain("path Parameter")
+		player:Destroy()
+	end)
+
+	it("rejects increment when the value is not a number", function()
+		local player = Harness.makePlayer()
+		local ok, err = fnApplyReward(player, {
+			name = "Increment",
+			opType = ENUMS.RewardOpTypes.Increment,
+			value = "nope",
+			path = dataUpdateSignal,
+			params = { PATHS.userData.coins },
+		})
+
+		expect(ok).toBeFalse()
+		expect(err).toContain("number")
+		player:Destroy()
+	end)
+
+	it("rejects a nil signal path", function()
+		local player = Harness.makePlayer()
+		local ok, err = fnApplyReward(player, {
+			name = "Fire",
+			opType = ENUMS.RewardOpTypes.FireSignal,
+			value = nil,
+			path = nil,
+			params = {},
+		})
+
+		expect(ok).toBeFalse()
+		expect(err).toContain("Signal path is nil")
+		player:Destroy()
+	end)
+
+	it("fires a signal when params are omitted", function()
+		CommsHub.signals.TestHarness = {
+			empty = "TestHarness:Empty",
+		}
+
+		local fired = false
+		local connection = SignalManager.connectToSignal("TestHarness:Empty", function()
+			fired = true
+		end)
+
+		local player = Harness.makePlayer()
+		local ok = fnApplyReward(player, {
+			name = "empty",
+			opType = ENUMS.RewardOpTypes.FireSignal,
+			value = nil,
+			path = { "signals", "TestHarness", "empty" },
+		})
+
+		expect(ok).toBeTrue()
+		expect(fired).toBeTrue()
+
+		if connection then
+			connection:Disconnect()
+		end
+		player:Destroy()
+	end)
+
+	it("rejects an invalid signal path", function()
+		local player = Harness.makePlayer()
+		local ok, err = fnApplyReward(player, {
+			name = "Fire",
+			opType = ENUMS.RewardOpTypes.FireSignal,
+			value = nil,
+			path = { "signals", "DoesNotExist" },
+			params = {},
+		})
+
+		expect(ok).toBeFalse()
+		expect(err).toContain("invalid")
+		player:Destroy()
+	end)
+
+	it("rejects params that are not an array", function()
+		local player = Harness.makePlayer()
+		local ok, err = fnApplyReward(player, {
+			name = "Fire",
+			opType = ENUMS.RewardOpTypes.FireSignal,
+			value = nil,
+			path = dataUpdateSignal,
+			params = { extra = true } :: any,
+		})
+
+		expect(ok).toBeFalse()
+		expect(err).toContain("array")
+		player:Destroy()
+	end)
+
+	it("stops applying rewards at the first failure and reports the index", function()
+		local player = Harness.makePlayer({ coins = 0 })
+		local ok, err, index = fnApplyRewards(player, {
+			SharedRewards.reward("coins", 4, dataUpdateSignal),
+			{
+				name = "Broken",
+				opType = 999,
+				value = 0,
+				path = dataUpdateSignal,
+				params = { PATHS.userData.coins },
+			},
+			SharedRewards.reward("coins", 4, dataUpdateSignal),
+		})
+
+		expect(ok).toBeFalse()
+		expect(err).toContain("Unknown operation type")
+		expect(index).toBe(2)
+		expect(Harness.getCoins(player)).toBe(4)
+		player:Destroy()
+	end)
+
+	it("applies rollback rewards only up to the failed index", function()
+		local player = Harness.makePlayer({ coins = 0 })
+		local ok, _, index = RuleEngine.applyRollback(player, {
+			context = ENUMS.ContextTypes.Server,
+			rollbackRewards = {
+				SharedRewards.reward("coins", 1, dataUpdateSignal),
+				SharedRewards.reward("coins", 10, dataUpdateSignal),
+				SharedRewards.reward("coins", 100, dataUpdateSignal),
+			},
+		}, 2)
+
+		expect(ok).toBeTrue()
+		expect(index).toBe(1)
+		expect(Harness.getCoins(player)).toBe(1)
+		player:Destroy()
+	end)
+end
+]]></ProtectedString>
+								<string name="ScriptGuid">{6C8AA87E-D4F3-463F-85CD-DEF78BEE7F7D}</string>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+								<string name="Name">RewardCases.spec</string>
+								<BinaryString name="SerializedOverrides"></BinaryString>
+								<int64 name="SourceAssetId">-1</int64>
+								<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+								<UniqueId name="UniqueId">120b36642ab4d1160adc70b70000258a</UniqueId>
+							</Properties>
+						</Item>
+						<Item class="ModuleScript" referent="RBXE17DE7ABD47F4260A8D774977BF3FEB5">
+							<Properties>
+								<Content name="LinkedSource"><null></null></Content>
+								<ProtectedString name="Source"><![CDATA[--!strict
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Modules
+local Modules = ReplicatedStorage.Shared.Modules
+local RuleEngine = require(Modules.RuleEngine)
+local Rewards = require(Modules.Data.Rewards)
+local Harness = require(script.Parent.Harness)
+
+-- Types
+type ItFn = Harness.ItFn
+type ExpectFn = Harness.ExpectFn
+
+-- Spec
+return function(it: ItFn, expect: ExpectFn): ()
+	it("sample 1 trades points for coins using Increment and Decrement", function()
+		local player = Harness.makePlayer({ coins = 0, points = 20 })
+		local conditionsPassed, rewardsApplied = RuleEngine.excuteRule(player, Rewards[1].ruleData)
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeTrue()
+		expect(Harness.getCoins(player)).toBe(5)
+		expect(Harness.getPoints(player)).toBe(10)
+		player:Destroy()
+	end)
+
+	it("sample 1 rejects a player with too few points", function()
+		local player = Harness.makePlayer({ coins = 0, points = 4 })
+		local conditionsPassed, rewardsApplied, _, err = RuleEngine.excuteRule(player, Rewards[1].ruleData)
+
+		expect(conditionsPassed).toBeFalse()
+		expect(rewardsApplied).toBeFalse()
+		expect(err).toContain("Not Enough points")
+		expect(Harness.getCoins(player)).toBe(0)
+		expect(Harness.getPoints(player)).toBe(4)
+		player:Destroy()
+	end)
+
+	it("sample 2 sets coins with the Set case", function()
+		local player = Harness.makePlayer({ coins = 8 })
+		local conditionsPassed, rewardsApplied = RuleEngine.excuteRule(player, Rewards[2].ruleData)
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeTrue()
+		expect(Harness.getCoins(player)).toBe(50)
+		player:Destroy()
+	end)
+
+	it("sample 2 does not set coins that are already the target value", function()
+		local player = Harness.makePlayer({ coins = 50 })
+		local conditionsPassed, _, _, err = RuleEngine.excuteRule(player, Rewards[2].ruleData)
+
+		expect(conditionsPassed).toBeFalse()
+		expect(err).toContain("already 50")
+		expect(Harness.getCoins(player)).toBe(50)
+		player:Destroy()
+	end)
+
+	it("sample 3 grants coins with the Increment case", function()
+		local player = Harness.makePlayer({ coins = 10 })
+		local conditionsPassed, rewardsApplied = RuleEngine.excuteRule(player, Rewards[3].ruleData)
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeTrue()
+		expect(Harness.getCoins(player)).toBe(25)
+		player:Destroy()
+	end)
+
+	it("sample 3 stops incrementing once the cap is reached", function()
+		local player = Harness.makePlayer({ coins = 100 })
+		local conditionsPassed, _, _, err = RuleEngine.excuteRule(player, Rewards[3].ruleData)
+
+		expect(conditionsPassed).toBeFalse()
+		expect(err).toContain("cap")
+		expect(Harness.getCoins(player)).toBe(100)
+		player:Destroy()
+	end)
+
+	it("sample 4 fires a signal and charges both currencies", function()
+		local player = Harness.makePlayer({ coins = 10, points = 10 })
+		local conditionsPassed, rewardsApplied = RuleEngine.excuteRule(player, Rewards[4].ruleData)
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeTrue()
+		expect(Harness.getCoins(player)).toBe(0)
+		expect(Harness.getPoints(player)).toBe(0)
+		expect(player.Backpack:FindFirstChild("Fake Sword") ~= nil).toBeTrue()
+		player:Destroy()
+	end)
+
+	it("sample 4 rejects a player with too few coins", function()
+		local player = Harness.makePlayer({ coins = 2, points = 20 })
+		local conditionsPassed, _, _, err = RuleEngine.excuteRule(player, Rewards[4].ruleData)
+
+		expect(conditionsPassed).toBeFalse()
+		expect(err).toContain("Not Enough Coins")
+		expect(player.Backpack:FindFirstChild("Fake Sword")).toBeNil()
+		player:Destroy()
+	end)
+
+	it("sample 5 spends points with the Decrement case", function()
+		local player = Harness.makePlayer({ points = 25 })
+		local conditionsPassed, rewardsApplied = RuleEngine.excuteRule(player, Rewards[5].ruleData)
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeTrue()
+		expect(Harness.getPoints(player)).toBe(15)
+		player:Destroy()
+	end)
+
+	it("sample 5 rejects a player who does not have more than the cost", function()
+		local player = Harness.makePlayer({ points = 10 })
+		local conditionsPassed, _, _, err = RuleEngine.excuteRule(player, Rewards[5].ruleData)
+
+		expect(conditionsPassed).toBeFalse()
+		expect(err).toContain("Need more than 10 Points")
+		expect(Harness.getPoints(player)).toBe(10)
+		player:Destroy()
+	end)
+end
+]]></ProtectedString>
+								<string name="ScriptGuid">{F05B8513-B775-423D-8DDE-020FCE5B767F}</string>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+								<string name="Name">Samples.spec</string>
+								<BinaryString name="SerializedOverrides"></BinaryString>
+								<int64 name="SourceAssetId">-1</int64>
+								<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+								<UniqueId name="UniqueId">120b36642ab4d1160adc70b70000258b</UniqueId>
 							</Properties>
 						</Item>
 					</Item>
@@ -10518,6 +12452,7 @@ local ToolService = require(Services.ToolService)
 local DataService = require(Services.DataService)
 local CacheService = require(Services.CacheService)
 local RewardService = require(Services.RewardService)
+local TestService = require(Services.TestService)
 
 -- Classes
 local Classes = ReplicatedStorage.Shared.Classes
@@ -10534,8 +12469,9 @@ local function boot(): ()
 
 	DataService.init()
 	CacheService.init()
-	RewardService.init()
 	ToolService.init()
+	TestService.init()
+	RewardService.init()
 
 	Logger:print(`{fn}: Server is up and running!`)
 end
@@ -10929,19 +12865,35 @@ function Private.setupRewardPart(part: BasePart, reward: GameReward): ()
 
 		cd = true
 
-		task.delay(0.5, function()
+		task.delay(1, function()
 			cd = false
 		end)
 
 		local player = fnIsAPlayerCharacter(hit)
 
 		if player then
-			local success, result = RuleEngine.checkAndApplyRule(player, reward.ruleData)
+			local conditionsPassed, rewardsApplied, rollbackApplied, err =
+				RuleEngine.excuteRule(player, reward.ruleData)
 
-			if not success then
-				Logger:warn(`{fn}: Failed to Check/Apply Rewards! Reason:`, result)
+			if not conditionsPassed then
+				local msg1 = `{fn}: Conditions were not satisfied!`
+				local msg2 = `Reason: {err}`
+				Logger:warn(`{msg1}\n{msg2}`)
+			elseif not rewardsApplied then
+				local msg1 = `{fn}: Rewards were not applied!`
+				local msg2 = `Reason: {err}`
+
+				if typeof(rollbackApplied) == "boolean" then
+					if rollbackApplied then
+						msg1 = `Rewards were not applied, and Rollback was successfull!`
+					else
+						msg1 = `Rewards were not applied, and Rollback failed!`
+					end
+				end
+
+				Logger:warn(`{msg1}\n{msg2}`)
 			else
-				Logger:print(`{fn}: Rewards were applied successfully!`)
+				Logger:print(`{fn}: Conditions were satisfied and Rewards were applied!`)
 			end
 		end
 	end)
@@ -11082,12 +13034,12 @@ end
     Initialize player data tree
     @param player Player - The player player instance
 	@param toolName string - The tool name to give
-	@param ... any -- Extra paramters to print :D
+	@param ... any -- Extra Parameters to print :D
 ]=]
 function Private.onGiveToolSignal(player: Player, toolName: string, ...: any): ()
 	local fn = `onGiveToolSignal`
 
-	Logger:print(`{fn}: Received a give tool signal with extra paramters:`, ...)
+	Logger:print(`{fn}: Received a give tool signal with extra Parameters:`, ...)
 
 	local tool = ToolsFolder:FindFirstChild(toolName) :: Tool
 
@@ -11139,6 +13091,60 @@ return ToolService
 					<UniqueId name="UniqueId">5333c15553ba16e90adb156600003c23</UniqueId>
 				</Properties>
 			</Item>
+			<Item class="ModuleScript" referent="RBX27309D8B158B4F6182176DCC90AA1DC6">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[--!strict
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Modules
+local Modules = ReplicatedStorage.Shared.Modules
+local Tests = require(Modules.RuleEngine.Tests)
+
+-- Classes
+local Classes = ReplicatedStorage.Shared.Classes
+local Logger = require(Classes.Logger.Class).new(`TestService`)
+
+-- Module
+local TestService = {}
+
+-- Public
+--[=[
+	Run the Rule Engine test suite
+]=]
+function TestService.init(): typeof(TestService)
+	local fn = `init`
+	local ran, allPassed, passed, failed = pcall(Tests.run)
+
+	if not ran then
+		Logger:warn(`{fn}: Test suite crashed: {tostring(allPassed)}`)
+		return TestService
+	end
+
+	if allPassed then
+		Logger:print(`{fn}: {passed} tests passed`)
+	else
+		Logger:warn(`{fn}: {passed} passed, {failed} failed`)
+	end
+
+	return TestService
+end
+
+return TestService
+]]></ProtectedString>
+					<string name="ScriptGuid">{E9339F33-9345-472D-B88D-14B25B5C9D50}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+					<string name="Name">TestService</string>
+					<BinaryString name="SerializedOverrides"></BinaryString>
+					<int64 name="SourceAssetId">-1</int64>
+					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+					<UniqueId name="UniqueId">120b36642ab4d1160adc70b700002594</UniqueId>
+				</Properties>
+			</Item>
 		</Item>
 	</Item>
 	<Item class="ServerStorage" referent="RBXD6DA596905EE42D5A168EFA9591A3345">
@@ -11152,21 +13158,6 @@ return ToolService
 			<int64 name="SourceAssetId">-1</int64>
 			<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			<UniqueId name="UniqueId">5333c15553ba16e90adb1566000003bc</UniqueId>
-		</Properties>
-	</Item>
-	<Item class="ServiceVisibilityService" referent="RBX44517D4E16094ADB927C64F89854594E">
-		<Properties>
-			<BinaryString name="HiddenServices">AAAAAA==</BinaryString>
-			<BinaryString name="VisibleServices">AAAAAA==</BinaryString>
-			<BinaryString name="AttributesSerialize"></BinaryString>
-			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
-			<bool name="DefinesCapabilities">false</bool>
-			<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
-			<string name="Name">ServiceVisibilityService</string>
-			<BinaryString name="SerializedOverrides"></BinaryString>
-			<int64 name="SourceAssetId">-1</int64>
-			<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
-			<UniqueId name="UniqueId">5333c15553ba16e90adb1566000003d1</UniqueId>
 		</Properties>
 	</Item>
 	<Item class="VideoService" referent="RBXA588AED2340C45BBBB9636E63657F94E">

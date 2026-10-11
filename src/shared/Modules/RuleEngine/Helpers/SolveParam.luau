@@ -24,10 +24,10 @@ type ContextType = Types.ContextType
 -- Function
 --[=[
 	Resolves a parameter based on its type, including data, cache, literal, time, and payload values.
-	@param player The player to resolve the parameter for
-	@param param Parameter data
+	@param player Player - The player to resolve the parameter for
+	@param param Parameter - Parameter data
 	@param payload Optional event payload for eventPayload parameters
-	@return The resolved parameter value
+	@return any - The resolved parameter value
 ]=]
 local function solveParam(player: Player, param: Param, payload: { [string]: any }?): any
 	if param.type == ENUMS.ParamOpTypes.DataPath then
@@ -64,7 +64,8 @@ local function solveParam(player: Player, param: Param, payload: { [string]: any
 		return fnWalkPayload(payload, param.path)
 	end
 
-	Logger:error("solveParam: Unknown param type " .. tostring(param.type))
+	Logger:error(`Unknown param type {tostring(param.type)}`)
+	return
 end
 
 return solveParam

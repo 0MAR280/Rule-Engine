@@ -15,6 +15,8 @@ local rewards = {
 	[2] = require(script["2"]),
 	[3] = require(script["3"]),
 	[4] = require(script["4"]),
+	[5] = require(script["5"]),
+	[6] = require(script["6"]),
 } :: { [number]: GameReward }
 
 return rewards
