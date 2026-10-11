@@ -338,24 +338,24 @@ gcLgc4RKxr21zq2UlJSM]]></BinaryString>
 					<X>-2.73546433</X>
 					<Y>16.158144</Y>
 					<Z>16.6836052</Z>
-					<R00>0.979297817</R00>
-					<R01>0.123437911</R01>
-					<R02>-0.160434633</R02>
-					<R10>2.61352398e-08</R10>
-					<R11>0.792564571</R11>
-					<R12>0.60979259</R12>
-					<R20>0.202426419</R20>
-					<R21>-0.597168922</R21>
-					<R22>0.776158094</R22>
+					<R00>0.978789151</R00>
+					<R01>0.123300761</R01>
+					<R02>-0.163615897</R02>
+					<R10>2.60770321e-08</R10>
+					<R11>0.798624158</R11>
+					<R12>0.60183692</R12>
+					<R20>0.204874188</R20>
+					<R21>-0.589072824</R21>
+					<R22>0.781686485</R22>
 				</CoordinateFrame>
 				<Ref name="CameraSubject">null</Ref>
 				<token name="CameraType">0</token>
 				<float name="FieldOfView">70</float>
 				<token name="FieldOfViewMode">0</token>
 				<CoordinateFrame name="Focus">
-					<X>-2.41459513</X>
-					<Y>14.9385586</Y>
-					<Z>15.1312885</Z>
+					<X>-2.40823245</X>
+					<Y>14.9544697</Y>
+					<Z>15.1202326</Z>
 					<R00>1</R00>
 					<R01>0</R01>
 					<R02>0</R02>
@@ -2040,6 +2040,7 @@ local rewards = {
 	[3] = require(script["3"]),
 	[4] = require(script["4"]),
 	[5] = require(script["5"]),
+	[6] = require(script["6"]),
 } :: { [number]: GameReward }
 
 return rewards
@@ -2567,6 +2568,72 @@ return {
 								<int64 name="SourceAssetId">-1</int64>
 								<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 								<UniqueId name="UniqueId">120b36642ab4d1160adc70b700002596</UniqueId>
+							</Properties>
+						</Item>
+						<Item class="ModuleScript" referent="RBX620840F9202F4F59BA71AD38FE4C2486">
+							<Properties>
+								<Content name="LinkedSource"><null></null></Content>
+								<ProtectedString name="Source"><![CDATA[--!strict
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Modules
+local Modules = ReplicatedStorage.Shared.Modules
+local Types = require(Modules.Types.Types)
+local PATHS = require(Modules.Data.PATHS)
+local ENUMS = require(Modules.Data.ENUMS)
+
+-- References
+local Shared = require(script.Parent._Shared)
+
+-- Variables
+local coinsGrant = 25
+local pointsGrant = 10
+
+local dataSignal = PATHS.signals.dataService.server.updatePlayerData
+local cacheSignal = PATHS.signals.cacheService.server.updatePlayerData
+
+-- Types
+type GameReward = Types.GameReward
+
+-- Module
+return {
+	id = 6,
+	ruleData = {
+		context = ENUMS.ContextTypes.Server,
+		rewards = {
+			Shared.reward("coins", coinsGrant, dataSignal),
+			Shared.cacheReward("points", pointsGrant, cacheSignal),
+			{
+				name = "Intentional Failure",
+				opType = 999,
+				value = 0,
+				path = dataSignal,
+				params = { PATHS.userData.coins },
+			},
+		},
+		rollbackRewards = {
+			Shared.payment("coins", coinsGrant, dataSignal),
+			Shared.cachePayment("points", pointsGrant, cacheSignal),
+		},
+	},
+	attributes = {
+		name = `Rollback`,
+		description = `Grant {coinsGrant} Coins & {pointsGrant} Points, then fail and roll back`,
+		color = Color3.fromRGB(200, 80, 255),
+	},
+} :: GameReward
+]]></ProtectedString>
+								<string name="ScriptGuid">{BD108F07-0B43-4C7F-B7A2-1101F5463F32}</string>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+								<string name="Name">6</string>
+								<BinaryString name="SerializedOverrides"></BinaryString>
+								<int64 name="SourceAssetId">-1</int64>
+								<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+								<UniqueId name="UniqueId">120b36642ab4d1160adc70b700002c7a</UniqueId>
 							</Properties>
 						</Item>
 					</Item>
@@ -4776,10 +4843,12 @@ function Tests.run(): (boolean, number, number)
 		end
 	end
 
+	local total = passed + failed
+
 	if failed == 0 then
-		Logger:print(`Rule Engine tests passed: {passed} passed, 0 failed`)
+		Logger:print(`Rule Engine tests: {passed}/{total} passed`)
 	else
-		Logger:warn(`Rule Engine tests failed: {passed} passed, {failed} failed`)
+		Logger:warn(`Rule Engine tests: {passed}/{total} passed, {failed} failed`)
 		for _, message in ipairs(failures) do
 			Logger:warn(`  - {message}`)
 		end
@@ -6113,6 +6182,18 @@ return function(it: ItFn, expect: ExpectFn): ()
 		expect(conditionsPassed).toBeFalse()
 		expect(err).toContain("Need more than 10 Points")
 		expect(Harness.getPoints(player)).toBe(10)
+		player:Destroy()
+	end)
+
+	it("sample 6 applies rewards, fails in the middle, and rolls back", function()
+		local player = Harness.makePlayer({ coins = 10, points = 20 })
+		local conditionsPassed, rewardsApplied, rollbackApplied = RuleEngine.excuteRule(player, Rewards[6].ruleData)
+
+		expect(conditionsPassed).toBeTrue()
+		expect(rewardsApplied).toBeFalse()
+		expect(rollbackApplied).toBeTrue()
+		expect(Harness.getCoins(player)).toBe(10)
+		expect(Harness.getPoints(player)).toBe(20)
 		player:Destroy()
 	end)
 end
@@ -13122,10 +13203,12 @@ function TestService.init(): typeof(TestService)
 		return TestService
 	end
 
+	local total = (passed or 0) + (failed or 0)
+
 	if allPassed then
-		Logger:print(`{fn}: {passed} tests passed`)
+		Logger:print(`{fn}: {passed}/{total} passed`)
 	else
-		Logger:warn(`{fn}: {passed} passed, {failed} failed`)
+		Logger:warn(`{fn}: {passed}/{total} passed, {failed} failed`)
 	end
 
 	return TestService
