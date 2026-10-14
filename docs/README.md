@@ -11,6 +11,7 @@ The engine lives in [`src/shared/Modules/RuleEngine`](../src/shared/Modules/Rule
 | [Engine](Engine.md) | Public API, run order, context, return values, rollback |
 | [Rules](Rules.md) | `RuleData`, `Condition`, `Reward`, `Value`, `Param`, and enums |
 | [Conditions](Conditions.md) | How conditions are solved, operators, params, callbacks, payload |
+| [SolveParam](SolveParam.md) | Data/cache adapter; update this when the host services move |
 | [Rewards](Rewards.md) | Reward operations, signal contract, builders, samples |
 | [Architecture](Architecture.md) | Helpers, CommsHub, Data/Cache services, paths |
 | [Testing](Testing.md) | Specs, the test place, and how to read results |

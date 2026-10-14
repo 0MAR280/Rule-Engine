@@ -180,7 +180,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		})
 
 		expect(ok).toBeFalse()
-		expect(err).toContain("path Parameter")
+		expect(err).toBe("A mal reward format")
 		player:Destroy()
 	end)
 
@@ -195,7 +195,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		})
 
 		expect(ok).toBeFalse()
-		expect(err).toContain("number")
+		expect(err).toBe("A mal reward format")
 		player:Destroy()
 	end)
 
@@ -210,7 +210,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		})
 
 		expect(ok).toBeFalse()
-		expect(err).toContain("Signal path is nil")
+		expect(err).toBe("A mal reward format")
 		player:Destroy()
 	end)
 
@@ -252,7 +252,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		})
 
 		expect(ok).toBeFalse()
-		expect(err).toContain("invalid")
+		expect(err).toBe("A mal reward format")
 		player:Destroy()
 	end)
 
@@ -267,7 +267,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		})
 
 		expect(ok).toBeFalse()
-		expect(err).toContain("array")
+		expect(err).toBe("A mal reward format")
 		player:Destroy()
 	end)
 
@@ -304,7 +304,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		}, 2)
 
 		expect(ok).toBeTrue()
-		expect(index).toBe(1)
+		expect(index).toBeNil()
 		expect(Harness.getCoins(player)).toBe(1)
 		player:Destroy()
 	end)

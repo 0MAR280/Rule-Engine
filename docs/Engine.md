@@ -51,15 +51,21 @@ Checks context and conditions only. Does not apply rewards.
 (ok, err, failureIndex) -> (boolean, string?, number?)
 ```
 
-Checks context and applies `rule.rewards`. On a list failure, `failureIndex` is the 1-based index of the reward that failed.
+Checks context and applies `rule.rewards`. On a list failure, `failureIndex` is the 1-based index of the reward that failed. On success, `failureIndex` is `nil`.
+
+List apply failures return `"Somthing went wrong!"`. The specific reason is logged.
 
 ### `applyRollback(player, rule, failureIndex?)`
 
 ```lua
-(ok, err, operationIndex) -> (boolean, string?, number?)
+(ok, err, failureIndex) -> (boolean, string?, number?)
 ```
 
 Checks context and applies `rule.rollbackRewards`. When `failureIndex` is a number, list rollback applies entries `1 .. failureIndex - 1` and stops at `failureIndex`.
+
+The third return is the failed rollback entry index, and only when a list entry fails. On success it is `nil`.
+
+List rollback failures return `"Somthing went wrong!"`. The specific reason is logged.
 
 `excuteRule` calls this with the failed reward index when that index is greater than 1.
 
@@ -84,21 +90,35 @@ excuteRule: Context mismatch. Expected: {rule.context} Current: {currentContext}
 
 `excuteRule` then returns `false, false, nil, msg`.
 
+## Error messages
+
+Callers get a short `err` string. Details stay in the log (`Logger:warn`).
+
+| Kind | Returned `err` |
+| --- | --- |
+| Condition `onFalse` / function condition reason | That message, as-is |
+| Context mismatch, wrong types | The specific validation message |
+| Function condition throw | The caught error, including the throw text |
+| Function reward / rollback that returns `false, reason` | That `reason` from `applyRewards` / `applyRollback`; `excuteRule` maps reward-side failures to `"Somthing went wrong!"` |
+| Malformed reward handler (`ApplyReward`) | `"A mal reward format"` |
+| Reward handler throw (`ApplyReward`) | `"A runtime error"` |
+| List apply / rollback failure, or `excuteRule` reward/rollback failure | `"Somthing went wrong!"` |
+
+Condition failures such as `"Not Enough points!"` are still returned to the caller. Reward and rollback internals are not.
+
 ## Return paths for `excuteRule`
 
 | Situation | Returns |
 | --- | --- |
 | Context mismatch | `false, false, nil, err` |
-| Conditions throw | `false, false, nil, "A runtime error: ..."` |
+| Conditions throw (function) | `false, false, nil, err` with the throw text |
 | Conditions fail | `false, false, nil, onFalse or err` |
 | Rewards succeed | `true, true, nil, nil` |
-| First reward fails | `true, false, false, "A mal ruledata: ..."` |
-| Later reward fails, rollback succeeds | `true, false, true, rollbackErr` |
-| Later reward fails, rollback fails | `true, false, false, "A mal ruledata: {reason}"` |
-| Later reward fails, rollback throws | `true, false, false, "A runtime error: ..."` |
-| Rewards throw | `true, false, false, "A runtime error: ..."` |
-
-A failed rollback function that returns `false, "reason"` is reported as `A mal ruledata: reason`.
+| First reward fails | `true, false, false, "Somthing went wrong!"` |
+| Later reward fails, rollback succeeds | `true, false, true, "Somthing went wrong!"` |
+| Later reward fails, rollback fails | `true, false, false, "Somthing went wrong!"` |
+| Later reward fails, rollback throws | `true, false, false, "Somthing went wrong!"` |
+| Rewards throw | `true, false, false, "Somthing went wrong!"` |
 
 ## Rollback
 
@@ -125,7 +145,7 @@ A function used as `conditions`, `rewards`, or `rollbackRewards` has this shape:
 ```
 
 - Return `true` (or anything other than `false`) to succeed.
-- Return `false, "reason"` to fail.
-- A thrown error is caught and returned as a runtime error.
+- Return `false, "reason"` to fail. `applyRewards` / `applyRollback` return that `reason`. `excuteRule` still returns `"Somthing went wrong!"` for reward and rollback failures, and logs the reason.
+- A thrown error is caught, logged, and treated as a runtime failure. Function conditions still return the throw text; reward-side throws from `excuteRule` return `"Somthing went wrong!"`.
 
 Function rewards and function rollback do not use `failureIndex`. They run as a single operation.

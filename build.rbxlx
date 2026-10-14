@@ -335,27 +335,27 @@ gcLgc4RKxr21zq2UlJSM]]></BinaryString>
 		<Item class="Camera" referent="RBX421FBA2A78F144CDB0D155E93428A8CA">
 			<Properties>
 				<CoordinateFrame name="CFrame">
-					<X>-2.73546433</X>
-					<Y>16.158144</Y>
-					<Z>16.6836052</Z>
-					<R00>0.978789151</R00>
-					<R01>0.123300761</R01>
-					<R02>-0.163615897</R02>
-					<R10>2.60770321e-08</R10>
-					<R11>0.798624158</R11>
-					<R12>0.60183692</R12>
-					<R20>0.204874188</R20>
-					<R21>-0.589072824</R21>
-					<R22>0.781686485</R22>
+					<X>-7.96927023</X>
+					<Y>35.9013329</Y>
+					<Z>38.6568909</Z>
+					<R00>0.612691224</R00>
+					<R01>0.559069037</R01>
+					<R02>-0.558624268</R02>
+					<R10>2.46800482e-08</R10>
+					<R11>0.706829011</R11>
+					<R12>0.707392633</R12>
+					<R20>0.790323615</R20>
+					<R21>-0.43341428</R21>
+					<R22>0.433071524</R22>
 				</CoordinateFrame>
 				<Ref name="CameraSubject">null</Ref>
 				<token name="CameraType">0</token>
 				<float name="FieldOfView">70</float>
 				<token name="FieldOfViewMode">0</token>
 				<CoordinateFrame name="Focus">
-					<X>-2.40823245</X>
-					<Y>14.9544697</Y>
-					<Z>15.1202326</Z>
+					<X>-6.85202169</X>
+					<Y>34.4865494</Y>
+					<Z>37.7907486</Z>
 					<R00>1</R00>
 					<R01>0</R01>
 					<R02>0</R02>
@@ -1401,21 +1401,6 @@ boot()
 			<int64 name="SourceAssetId">-1</int64>
 			<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			<UniqueId name="UniqueId">5333c15553ba16e90adb1566000003b1</UniqueId>
-		</Properties>
-	</Item>
-	<Item class="ServiceVisibilityService" referent="RBX44517D4E16094ADB927C64F89854594E">
-		<Properties>
-			<BinaryString name="HiddenServices">AAAAAA==</BinaryString>
-			<BinaryString name="VisibleServices">AAAAAA==</BinaryString>
-			<BinaryString name="AttributesSerialize"></BinaryString>
-			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
-			<bool name="DefinesCapabilities">false</bool>
-			<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
-			<string name="Name">ServiceVisibilityService</string>
-			<BinaryString name="SerializedOverrides"></BinaryString>
-			<int64 name="SourceAssetId">-1</int64>
-			<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
-			<UniqueId name="UniqueId">5333c15553ba16e90adb1566000003d1</UniqueId>
 		</Properties>
 	</Item>
 	<Item class="LuaWebService" referent="RBX3FCEB67A25DF49428B86F5FD00E31860">
@@ -3375,6 +3360,7 @@ local fnSolveAllConditions = require(Helpers.SolveAllConditions)
 
 -- Variables
 local currentContext: ContextType = RunService:IsServer() and ENUMS.ContextTypes.Server or ENUMS.ContextTypes.Client
+local failureMessage = "Somthing went wrong!"
 
 -- Functions
 -- Private
@@ -3429,20 +3415,22 @@ function RuleEngine.excuteRule(
 		return false, false, nil, msg
 	end
 
+	-- In case of pcall failure, the "conditionsStatisfied" is the error message!
 	local conditionsPcallSuccess, conditionsStatisfied, conditionsErr = pcall(function(): (boolean, string?)
 		return RuleEngine.checkConditions(player, rule, payload)
 	end)
 
 	if not conditionsPcallSuccess then
 		local msg1 = `Failed to check conditions!`
-		local msg2 = `A runtime error: {tostring(conditionsErr)}`
-		Logger:warn(`{fn}: {msg1}\n{msg2}`)
+		local msg2 = `A runtime error`
+		Logger:warn(`{msg1}\n{msg2}: {tostring(conditionsStatisfied)}`)
 
-		return false, false, nil, msg2
+		return false, false, nil, failureMessage
 	elseif not conditionsStatisfied then
 		return false, false, nil, conditionsErr
 	end
 
+	-- In case of pcall failure, the "rewardsStatisfied" is the error message!
 	local rewardsPcallSuccess, rewardsStatisfied, rewardsErr, rewardsFailureIndex = pcall(
 		function(): (boolean, string?, number?)
 			return RuleEngine.applyRewards(player, rule)
@@ -3455,6 +3443,7 @@ function RuleEngine.excuteRule(
 		local msg3 = `Performing a Rollback...`
 		Logger:warn(`{fn}: {msg1}\n{msg2}\n{msg3}`)
 
+		-- In case of pcall failure, the "rollbackApplied" is the error message!
 		local rollbackPcallSuccess, rollbackApplied, rollbackErr, rollbackFailureIndex = pcall(
 			function(): (boolean, string?, number?)
 				return RuleEngine.applyRollback(player, rule, rewardsFailureIndex)
@@ -3463,33 +3452,33 @@ function RuleEngine.excuteRule(
 
 		if not rollbackPcallSuccess then
 			msg1 = `Failed to apply rollback at index {rollbackFailureIndex}!`
-			msg2 = `A runtime error: {tostring(rollbackErr)}`
-			Logger:warn(`{fn}: {msg1}\n{msg2}`)
+			msg2 = `A runtime error`
+			Logger:warn(`{msg1}\n{msg2}: {tostring(rollbackApplied)}`)
 
-			return true, false, false, msg2
+			return true, false, false, failureMessage
 		elseif not rollbackApplied then
 			msg1 = `Failed to apply rollback!`
 			msg2 = `A mal ruledata: {tostring(rollbackErr)}`
 			Logger:warn(`{fn}: {msg1}\n{msg2}`)
 
-			return true, false, false, msg2
+			return true, false, false, failureMessage
 		end
 
-		return true, false, true, rollbackErr
+		return true, false, true, failureMessage
 	end
 
 	if not rewardsPcallSuccess then
 		local msg1 = `Failed to apply rewards!`
-		local msg2 = `A runtime error: {tostring(rewardsErr)}`
-		Logger:warn(`{fn}: {msg1}\n{msg2}`)
+		local msg2 = `A runtime error`
+		Logger:warn(`{msg1}\n{msg2}: {tostring(rewardsStatisfied)}`)
 
-		return true, false, false, msg2
+		return true, false, false, failureMessage
 	elseif not rewardsStatisfied then
 		local msg1 = `Failed to apply rewards!`
 		local msg2 = `A mal ruledata: {tostring(rewardsErr)}`
 		Logger:warn(`{fn}: {msg1}\n{msg2}`)
 
-		return true, false, false, msg2
+		return true, false, false, failureMessage
 	end
 
 	return true, true, nil, nil
@@ -3534,7 +3523,28 @@ function RuleEngine.applyRewards(player: Player, rule: RuleData): (boolean, stri
 
 			return true
 		elseif isList(rule.rewards) then
-			return fnApplyRewards(player, rule.rewards)
+			-- In case of pcall failure, the "rewardsStatisfied" is the error message!
+			local rewardsPcallSuccess, rewardsStatisfied, rewardsErr, rewardsFailureIndex = pcall(
+				function(): (boolean, string?, number?)
+					return fnApplyRewards(player, rule.rewards)
+				end
+			)
+
+			if not rewardsPcallSuccess then
+				local msg1 = `Failed to apply rewards!`
+				local msg2 = `A runtime error`
+				Logger:warn(`{msg1}\n{msg2}: {tostring(rewardsStatisfied)}`)
+
+				return false, failureMessage, rewardsFailureIndex
+			elseif not rewardsStatisfied then
+				local msg1 = `Failed to apply rewards!`
+				local msg2 = `A mal ruledata`
+				Logger:warn(`{fn}: {msg1}\n{msg2}: : {tostring(rewardsErr)}`)
+
+				return false, failureMessage, rewardsFailureIndex
+			end
+
+			return true, nil, nil
 		else
 			local msg =
 				`rule.rewards is expected as a "function" or an array, got: {TypeChecker.getType(rule.rewards)}!`
@@ -3589,7 +3599,28 @@ function RuleEngine.applyRollback(player: Player, rule: RuleData, failureIndex: 
 
 			return true
 		elseif isList(rule.rollbackRewards) then
-			return fnApplyRewards(player, rule.rollbackRewards, failureIndex)
+			-- In case of pcall failure, the "rollbackStatisfied" is the error message!
+			local rollbackPcallSuccess, rollbackStatisfied, rollbackErr, rewardsFailureIndex = pcall(
+				function(): (boolean, string?, number?)
+					return fnApplyRewards(player, rule.rollbackRewards, failureIndex)
+				end
+			)
+
+			if not rollbackPcallSuccess then
+				local msg1 = `Failed to apply rewards rollback!`
+				local msg2 = `A runtime error`
+				Logger:warn(`{msg1}\n{msg2}: {tostring(rollbackStatisfied)}`)
+
+				return false, failureMessage, rewardsFailureIndex
+			elseif not rollbackStatisfied then
+				local msg1 = `Failed to apply rewards rollback!`
+				local msg2 = `A mal ruledata: {tostring(rollbackErr)}`
+				Logger:warn(`{fn}: {msg1}\n{msg2}`)
+
+				return false, failureMessage, rewardsFailureIndex
+			end
+
+			return true, nil, nil
 		else
 			local msg = `rule.rollbackRewards is expected as a "function" or an array, got: {TypeChecker.getType(
 				rule.rollbackRewards
@@ -3641,7 +3672,22 @@ function RuleEngine.checkConditions(player: Player, rule: RuleData, payload: { [
 				return resullt, reason
 			end
 		elseif isList(rule.conditions) then
-			return fnSolveAllConditions(player, rule.conditions, payload)
+			-- In case of pcall failure, the "conditionsStatisfied" is the error message!
+			local conditionsPcallSuccess, conditionsStatisfied, conditionsErr = pcall(function(): (boolean, string?)
+				return fnSolveAllConditions(player, rule.conditions, payload)
+			end)
+
+			if not conditionsPcallSuccess then
+				local msg1 = `Failed to check conditions!`
+				local msg2 = `A runtime error`
+				Logger:warn(`{msg1}\n{msg2}: {tostring(conditionsStatisfied)}`)
+
+				return false, failureMessage
+			elseif not conditionsStatisfied then
+				return false, conditionsErr
+			end
+
+			return true, nil
 		else
 			local msg =
 				`rule.conditions is expected as a "function" or an array, got: {TypeChecker.getType(rule.conditions)}!`
@@ -4225,22 +4271,23 @@ local function applyReward(player: Player, reward: Reward): (boolean, string?)
 		return false, msg
 	end
 
+	-- In case of pcall failure, the "rewardSuccess" is the error message!
 	local pcallSuccess, rewardSuccess, err = pcall(RewardCases[opType], player, reward)
 
 	table.clear(reward)
 
 	if not pcallSuccess then
 		local msg1 = `Failed to apply reward with operation: {tostring(opType)}!`
-		local msg2 = `A runtime error: {tostring(err)}`
-		Logger:warn(`{msg1}\n{msg2}`)
+		local msg2 = `A runtime error`
+		Logger:warn(`{msg1}\n{msg2}: {tostring(rewardSuccess)}`)
 
 		return false, msg2
 	end
 
 	if not rewardSuccess then
 		local msg1 = `Failed to apply reward with operation: {tostring(opType)}!`
-		local msg2 = `A mal reward format: {tostring(err)}`
-		Logger:warn(`{msg1}\n{msg2}`)
+		local msg2 = `A mal reward format`
+		Logger:warn(`{msg1}\n{msg2}: {tostring(err)}`)
 
 		return false, msg2
 	end
@@ -5412,7 +5459,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		expect(conditionsPassed).toBeTrue()
 		expect(rewardsApplied).toBeFalse()
 		expect(rollbackApplied).toBeFalse()
-		expect(err).toBe("A mal ruledata: rollback refused")
+		expect(err).toBe("Somthing went wrong!")
 		expect(Harness.getCoins(player)).toBe(15)
 		player:Destroy()
 	end)
@@ -5919,7 +5966,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		})
 
 		expect(ok).toBeFalse()
-		expect(err).toContain("path Parameter")
+		expect(err).toBe("A mal reward format")
 		player:Destroy()
 	end)
 
@@ -5934,7 +5981,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		})
 
 		expect(ok).toBeFalse()
-		expect(err).toContain("number")
+		expect(err).toBe("A mal reward format")
 		player:Destroy()
 	end)
 
@@ -5949,7 +5996,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		})
 
 		expect(ok).toBeFalse()
-		expect(err).toContain("Signal path is nil")
+		expect(err).toBe("A mal reward format")
 		player:Destroy()
 	end)
 
@@ -5991,7 +6038,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		})
 
 		expect(ok).toBeFalse()
-		expect(err).toContain("invalid")
+		expect(err).toBe("A mal reward format")
 		player:Destroy()
 	end)
 
@@ -6006,7 +6053,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		})
 
 		expect(ok).toBeFalse()
-		expect(err).toContain("array")
+		expect(err).toBe("A mal reward format")
 		player:Destroy()
 	end)
 
@@ -6043,7 +6090,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		}, 2)
 
 		expect(ok).toBeTrue()
-		expect(index).toBe(1)
+		expect(index).toBeNil()
 		expect(Harness.getCoins(player)).toBe(1)
 		player:Destroy()
 	end)
@@ -12336,6 +12383,17 @@ local counterDefinitions = {
 	@param counter Counter The counter to update
 ]=]
 local function updateCounter(counter: Counter): ()
+	local rootName = counter.path[1]
+	if typeof(rootName) ~= "string" or player:FindFirstChild(rootName) == nil then
+		if counter.valueConnection then
+			counter.valueConnection:Disconnect()
+			counter.valueConnection = nil
+		end
+		counter.valueObject = nil
+		counter.label.Text = `{counter.name}: --`
+		return
+	end
+
 	local resolvedValue = fnTraversePath(player, counter.path)
 	local valueObject: ValueBase? = nil
 
@@ -13241,6 +13299,21 @@ return TestService
 			<int64 name="SourceAssetId">-1</int64>
 			<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			<UniqueId name="UniqueId">5333c15553ba16e90adb1566000003bc</UniqueId>
+		</Properties>
+	</Item>
+	<Item class="ServiceVisibilityService" referent="RBX44517D4E16094ADB927C64F89854594E">
+		<Properties>
+			<BinaryString name="HiddenServices">AAAAAA==</BinaryString>
+			<BinaryString name="VisibleServices">AAAAAA==</BinaryString>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+			<string name="Name">ServiceVisibilityService</string>
+			<BinaryString name="SerializedOverrides"></BinaryString>
+			<int64 name="SourceAssetId">-1</int64>
+			<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+			<UniqueId name="UniqueId">5333c15553ba16e90adb1566000003d1</UniqueId>
 		</Properties>
 	</Item>
 	<Item class="VideoService" referent="RBXA588AED2340C45BBBB9636E63657F94E">

@@ -25,7 +25,7 @@ Unknown `opType` values fail closed (`false`).
 (player: Player, reward: Reward) -> (boolean, string?)
 ```
 
-Return `true` on success, or `false, "reason"` on a bad reward. Throw only for unexpected runtime errors.
+Return `true` on success, or `false, "reason"` on a bad reward. Throw only for unexpected runtime errors. `ApplyReward` logs `reason` and returns `"A mal reward format"` (or `"A runtime error"` if the case throws).
 
 3. Register it in [`RewardCases/init.luau`](../src/shared/Modules/RuleEngine/RewardCases/init.luau).
 4. If it fires a signal, add the name to `CommsHub`, a path to `PATHS.signals`, and a listener in a service.
@@ -37,10 +37,12 @@ Return `true` on success, or `false, "reason"` on a bad reward. Throw only for u
 ## Add a param source
 
 1. Add a value to `ENUMS.ParamOpTypes`.
-2. Handle it in [`SolveParam.luau`](../src/shared/Modules/RuleEngine/Helpers/SolveParam.luau).
+2. Handle it in [`SolveParam.luau`](../src/shared/Modules/RuleEngine/Helpers/SolveParam.luau). See [SolveParam.md](SolveParam.md).
 3. Cover it in `Tests/Helpers.spec.luau` and a condition spec.
 
 Unknown param types throw through `Logger:error`.
+
+If you only moved DataService or CacheService, do not add a param type. Change the `require` paths and getter calls in `SolveParam` so `DataPath` / `CachePath` still hit the host APIs.
 
 ## Add a sample reward
 

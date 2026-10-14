@@ -42,7 +42,7 @@ excuteRule
 | `SolveAllConditions` | First-failing condition wins |
 | `SolveCondition` | Resolve values, run a comparator |
 | `SolveConditionValue` | Literal vs `{ param }`, callbacks, `returnIndex` |
-| `SolveParam` | DataPath, CachePath, Value, Now, EventPayload |
+| `SolveParam` | DataPath, CachePath, Value, Now, EventPayload. Host Data/Cache requires live here; see [SolveParam.md](SolveParam.md) |
 | `WalkPayload` | Walk a payload table by path; fail closed to `nil` |
 | `ApplyReward` | Resolve dynamic `value`, dispatch to a reward case |
 | `ApplyRewards` | Apply a list, optional `stopIndex` |
@@ -75,7 +75,7 @@ player
     Playtime (NumberValue)   -- CachePath, +1 per second
 ```
 
-Client mirrors of `getData` live under `src/shared/Services`.
+Client mirrors of `getData` live under `src/shared/Services`. `SolveParam` requires those modules by path; if you move or rename them, update `SolveParam` itself. See [SolveParam.md](SolveParam.md).
 
 ## Paths
 

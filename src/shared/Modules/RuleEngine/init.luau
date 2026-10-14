@@ -34,6 +34,7 @@ local fnSolveAllConditions = require(Helpers.SolveAllConditions)
 
 -- Variables
 local currentContext: ContextType = RunService:IsServer() and ENUMS.ContextTypes.Server or ENUMS.ContextTypes.Client
+local failureMessage = "Somthing went wrong!"
 
 -- Functions
 -- Private
@@ -88,20 +89,22 @@ function RuleEngine.excuteRule(
 		return false, false, nil, msg
 	end
 
+	-- In case of pcall failure, the "conditionsStatisfied" is the error message!
 	local conditionsPcallSuccess, conditionsStatisfied, conditionsErr = pcall(function(): (boolean, string?)
 		return RuleEngine.checkConditions(player, rule, payload)
 	end)
 
 	if not conditionsPcallSuccess then
 		local msg1 = `Failed to check conditions!`
-		local msg2 = `A runtime error: {tostring(conditionsErr)}`
-		Logger:warn(`{fn}: {msg1}\n{msg2}`)
+		local msg2 = `A runtime error`
+		Logger:warn(`{msg1}\n{msg2}: {tostring(conditionsStatisfied)}`)
 
-		return false, false, nil, msg2
+		return false, false, nil, failureMessage
 	elseif not conditionsStatisfied then
 		return false, false, nil, conditionsErr
 	end
 
+	-- In case of pcall failure, the "rewardsStatisfied" is the error message!
 	local rewardsPcallSuccess, rewardsStatisfied, rewardsErr, rewardsFailureIndex = pcall(
 		function(): (boolean, string?, number?)
 			return RuleEngine.applyRewards(player, rule)
@@ -114,6 +117,7 @@ function RuleEngine.excuteRule(
 		local msg3 = `Performing a Rollback...`
 		Logger:warn(`{fn}: {msg1}\n{msg2}\n{msg3}`)
 
+		-- In case of pcall failure, the "rollbackApplied" is the error message!
 		local rollbackPcallSuccess, rollbackApplied, rollbackErr, rollbackFailureIndex = pcall(
 			function(): (boolean, string?, number?)
 				return RuleEngine.applyRollback(player, rule, rewardsFailureIndex)
@@ -122,33 +126,33 @@ function RuleEngine.excuteRule(
 
 		if not rollbackPcallSuccess then
 			msg1 = `Failed to apply rollback at index {rollbackFailureIndex}!`
-			msg2 = `A runtime error: {tostring(rollbackErr)}`
-			Logger:warn(`{fn}: {msg1}\n{msg2}`)
+			msg2 = `A runtime error`
+			Logger:warn(`{msg1}\n{msg2}: {tostring(rollbackApplied)}`)
 
-			return true, false, false, msg2
+			return true, false, false, failureMessage
 		elseif not rollbackApplied then
 			msg1 = `Failed to apply rollback!`
 			msg2 = `A mal ruledata: {tostring(rollbackErr)}`
 			Logger:warn(`{fn}: {msg1}\n{msg2}`)
 
-			return true, false, false, msg2
+			return true, false, false, failureMessage
 		end
 
-		return true, false, true, rollbackErr
+		return true, false, true, failureMessage
 	end
 
 	if not rewardsPcallSuccess then
 		local msg1 = `Failed to apply rewards!`
-		local msg2 = `A runtime error: {tostring(rewardsErr)}`
-		Logger:warn(`{fn}: {msg1}\n{msg2}`)
+		local msg2 = `A runtime error`
+		Logger:warn(`{msg1}\n{msg2}: {tostring(rewardsStatisfied)}`)
 
-		return true, false, false, msg2
+		return true, false, false, failureMessage
 	elseif not rewardsStatisfied then
 		local msg1 = `Failed to apply rewards!`
 		local msg2 = `A mal ruledata: {tostring(rewardsErr)}`
 		Logger:warn(`{fn}: {msg1}\n{msg2}`)
 
-		return true, false, false, msg2
+		return true, false, false, failureMessage
 	end
 
 	return true, true, nil, nil
@@ -193,7 +197,28 @@ function RuleEngine.applyRewards(player: Player, rule: RuleData): (boolean, stri
 
 			return true
 		elseif isList(rule.rewards) then
-			return fnApplyRewards(player, rule.rewards)
+			-- In case of pcall failure, the "rewardsStatisfied" is the error message!
+			local rewardsPcallSuccess, rewardsStatisfied, rewardsErr, rewardsFailureIndex = pcall(
+				function(): (boolean, string?, number?)
+					return fnApplyRewards(player, rule.rewards)
+				end
+			)
+
+			if not rewardsPcallSuccess then
+				local msg1 = `Failed to apply rewards!`
+				local msg2 = `A runtime error`
+				Logger:warn(`{msg1}\n{msg2}: {tostring(rewardsStatisfied)}`)
+
+				return false, failureMessage, rewardsFailureIndex
+			elseif not rewardsStatisfied then
+				local msg1 = `Failed to apply rewards!`
+				local msg2 = `A mal ruledata`
+				Logger:warn(`{fn}: {msg1}\n{msg2}: : {tostring(rewardsErr)}`)
+
+				return false, failureMessage, rewardsFailureIndex
+			end
+
+			return true, nil, nil
 		else
 			local msg =
 				`rule.rewards is expected as a "function" or an array, got: {TypeChecker.getType(rule.rewards)}!`
@@ -248,7 +273,28 @@ function RuleEngine.applyRollback(player: Player, rule: RuleData, failureIndex: 
 
 			return true
 		elseif isList(rule.rollbackRewards) then
-			return fnApplyRewards(player, rule.rollbackRewards, failureIndex)
+			-- In case of pcall failure, the "rollbackStatisfied" is the error message!
+			local rollbackPcallSuccess, rollbackStatisfied, rollbackErr, rewardsFailureIndex = pcall(
+				function(): (boolean, string?, number?)
+					return fnApplyRewards(player, rule.rollbackRewards, failureIndex)
+				end
+			)
+
+			if not rollbackPcallSuccess then
+				local msg1 = `Failed to apply rewards rollback!`
+				local msg2 = `A runtime error`
+				Logger:warn(`{msg1}\n{msg2}: {tostring(rollbackStatisfied)}`)
+
+				return false, failureMessage, rewardsFailureIndex
+			elseif not rollbackStatisfied then
+				local msg1 = `Failed to apply rewards rollback!`
+				local msg2 = `A mal ruledata: {tostring(rollbackErr)}`
+				Logger:warn(`{fn}: {msg1}\n{msg2}`)
+
+				return false, failureMessage, rewardsFailureIndex
+			end
+
+			return true, nil, nil
 		else
 			local msg = `rule.rollbackRewards is expected as a "function" or an array, got: {TypeChecker.getType(
 				rule.rollbackRewards
@@ -300,7 +346,22 @@ function RuleEngine.checkConditions(player: Player, rule: RuleData, payload: { [
 				return resullt, reason
 			end
 		elseif isList(rule.conditions) then
-			return fnSolveAllConditions(player, rule.conditions, payload)
+			-- In case of pcall failure, the "conditionsStatisfied" is the error message!
+			local conditionsPcallSuccess, conditionsStatisfied, conditionsErr = pcall(function(): (boolean, string?)
+				return fnSolveAllConditions(player, rule.conditions, payload)
+			end)
+
+			if not conditionsPcallSuccess then
+				local msg1 = `Failed to check conditions!`
+				local msg2 = `A runtime error`
+				Logger:warn(`{msg1}\n{msg2}: {tostring(conditionsStatisfied)}`)
+
+				return false, failureMessage
+			elseif not conditionsStatisfied then
+				return false, conditionsErr
+			end
+
+			return true, nil
 		else
 			local msg =
 				`rule.conditions is expected as a "function" or an array, got: {TypeChecker.getType(rule.conditions)}!`

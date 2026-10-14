@@ -18,7 +18,9 @@ Each reward is deep-copied, then:
 2. The matching `RewardCases[opType]` handler runs.
 3. The copy is cleared.
 
-Unknown `opType` fails. A handler that returns `false, err` is reported as `A mal reward format: {err}`. A thrown error is reported as `A runtime error: {err}`.
+Unknown `opType` fails with `Unknown operation type {opType} for reward {name}`.
+
+A handler that returns `false, err` is returned to the caller as `"A mal reward format"`. A thrown error is returned as `"A runtime error"`. The specific `err` is logged in both cases.
 
 ## Signal contract
 

@@ -39,6 +39,17 @@ local counterDefinitions = {
 	@param counter Counter The counter to update
 ]=]
 local function updateCounter(counter: Counter): ()
+	local rootName = counter.path[1]
+	if typeof(rootName) ~= "string" or player:FindFirstChild(rootName) == nil then
+		if counter.valueConnection then
+			counter.valueConnection:Disconnect()
+			counter.valueConnection = nil
+		end
+		counter.valueObject = nil
+		counter.label.Text = `{counter.name}: --`
+		return
+	end
+
 	local resolvedValue = fnTraversePath(player, counter.path)
 	local valueObject: ValueBase? = nil
 

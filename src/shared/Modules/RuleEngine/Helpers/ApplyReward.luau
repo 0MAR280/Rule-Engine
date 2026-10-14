@@ -47,22 +47,23 @@ local function applyReward(player: Player, reward: Reward): (boolean, string?)
 		return false, msg
 	end
 
+	-- In case of pcall failure, the "rewardSuccess" is the error message!
 	local pcallSuccess, rewardSuccess, err = pcall(RewardCases[opType], player, reward)
 
 	table.clear(reward)
 
 	if not pcallSuccess then
 		local msg1 = `Failed to apply reward with operation: {tostring(opType)}!`
-		local msg2 = `A runtime error: {tostring(err)}`
-		Logger:warn(`{msg1}\n{msg2}`)
+		local msg2 = `A runtime error`
+		Logger:warn(`{msg1}\n{msg2}: {tostring(rewardSuccess)}`)
 
 		return false, msg2
 	end
 
 	if not rewardSuccess then
 		local msg1 = `Failed to apply reward with operation: {tostring(opType)}!`
-		local msg2 = `A mal reward format: {tostring(err)}`
-		Logger:warn(`{msg1}\n{msg2}`)
+		local msg2 = `A mal reward format`
+		Logger:warn(`{msg1}\n{msg2}: {tostring(err)}`)
 
 		return false, msg2
 	end

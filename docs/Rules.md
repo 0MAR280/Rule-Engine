@@ -98,8 +98,8 @@ If the table has a `param` field, the engine resolves it through `SolveParam`, t
 
 | `type` | Fields used | Result |
 | --- | --- | --- |
-| `DataPath` | `path` | Player data at that path (`DataService`) |
-| `CachePath` | `path` | Session cache at that path (`CacheService`) |
+| `DataPath` | `path` | Player data at that path (`DataService`). Resolved in [SolveParam](SolveParam.md) |
+| `CachePath` | `path` | Session cache at that path (`CacheService`). Resolved in [SolveParam](SolveParam.md) |
 | `Value` | `value` | The literal `value` |
 | `Now` | | `os.time()` |
 | `EventPayload` | `path` | A field walked inside the `payload` table passed to `excuteRule` / `checkConditions` |

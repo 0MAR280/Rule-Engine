@@ -5,7 +5,7 @@ Helpers:
 - [`SolveAllConditions.luau`](../src/shared/Modules/RuleEngine/Helpers/SolveAllConditions.luau)
 - [`SolveCondition.luau`](../src/shared/Modules/RuleEngine/Helpers/SolveCondition.luau)
 - [`SolveConditionValue.luau`](../src/shared/Modules/RuleEngine/Helpers/SolveConditionValue.luau)
-- [`SolveParam.luau`](../src/shared/Modules/RuleEngine/Helpers/SolveParam.luau)
+- [`SolveParam.luau`](../src/shared/Modules/RuleEngine/Helpers/SolveParam.luau) — dedicated notes in [SolveParam.md](SolveParam.md)
 - [`WalkPayload.luau`](../src/shared/Modules/RuleEngine/Helpers/WalkPayload.luau)
 
 Comparators: [`src/shared/Modules/Math/ConditionCases`](../src/shared/Modules/Math/ConditionCases)
@@ -66,6 +66,8 @@ value2 = 10
 `BALANCES` in [`src/shared/Modules/Data/BALANCES.luau`](../src/shared/Modules/Data/BALANCES.luau) already holds `DataPath` / `CachePath` params for `coins`, `points`, and `playtime`.
 
 ### Param sources
+
+Full wiring, expected service APIs, and what to change in a host game: [SolveParam.md](SolveParam.md).
 
 **DataPath** reads `DataService.getPlayerData(player, path)` on the server, or `DataService.getData(path)` on the client.
 

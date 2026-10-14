@@ -8,7 +8,9 @@ The server runs the suite on boot, after Data, Cache, and Tool services, before 
 
 ## Output
 
-Each spec prints `PASS` or `FAIL`. The summary is `{passed}/{total} passed`, for example `67/67 passed`.
+Each spec prints `PASS` or `FAIL`. The summary is `{passed}/{total} passed`, for example `70/70 passed`.
+
+Specs assert caller-facing return values. Condition `onFalse` strings are returned as-is. Malformed reward handlers return `"A mal reward format"`. `excuteRule` reward and rollback failures return `"Somthing went wrong!"`. Specific reasons show up in the server log, not in `err`. `applyRollback` reports a failure index only when a list entry fails.
 
 A suite crash is caught by `TestService` so the place still boots.
 
