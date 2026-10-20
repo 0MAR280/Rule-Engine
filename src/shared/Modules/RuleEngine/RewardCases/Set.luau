@@ -70,10 +70,14 @@ local function setReward(player: Player, reward: Reward): (boolean, string?)
 			table.remove(params, 1)
 			local newValue = reward.value
 
+			-- Remaining params are extra signal args (e.g. dontReplicate).
+			-- Do not forward an empty table: it is truthy, so DataService skips client replication.
 			if reward.unpackParams then
 				SignalManager.fireSignal(signal, player, valuePath, newValue, table.unpack(params))
-			else
+			elseif #params > 0 then
 				SignalManager.fireSignal(signal, player, valuePath, newValue, params)
+			else
+				SignalManager.fireSignal(signal, player, valuePath, newValue)
 			end
 
 			return true, nil

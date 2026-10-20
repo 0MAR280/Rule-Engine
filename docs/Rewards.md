@@ -52,7 +52,7 @@ signal(player, valuePath, function(current: number) return current + value end, 
 
 `DataService` / `CacheService` `updatePlayerData` handlers expect that callback.
 
-Requires a signal path, a number `value`, and a valid target path as `params[1]`.
+Requires a signal path, a number `value`, and a valid target path as `params[1]`. Leftover `params` after the path are extra signal args. An empty leftover table is omitted; passing `{}` is truthy and any consumer expecting optional paramter would deal with it as `true`.
 
 ### Decrement
 
