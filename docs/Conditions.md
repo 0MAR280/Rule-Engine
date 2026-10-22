@@ -12,7 +12,7 @@ Comparators: [`src/shared/Modules/Math/ConditionCases`](../src/shared/Modules/Ma
 
 ## Evaluation
 
-`checkConditions` / `excuteRule`:
+`checkConditions` / `executeRule`:
 
 1. Reject a context mismatch.
 2. If `conditions` is missing, pass.
@@ -36,14 +36,14 @@ The first failing condition returns `false, condition.onFalse` or, if `onFalse` 
 
 Each comparator is `(v1, v2) -> boolean` and expects numbers for ordered compares:
 
-| Operator | True when |
-| --- | --- |
-| `Equal` | `v1 == v2` |
-| `NotEqual` | `v1 ~= v2` |
-| `GreaterThan` | `v1 > v2` |
+| Operator             | True when  |
+| -------------------- | ---------- |
+| `Equal`              | `v1 == v2` |
+| `NotEqual`           | `v1 ~= v2` |
+| `GreaterThan`        | `v1 > v2`  |
 | `GreaterThanOrEqual` | `v1 >= v2` |
-| `LessThan` | `v1 < v2` |
-| `LessThanOrEqual` | `v1 <= v2` |
+| `LessThan`           | `v1 < v2`  |
+| `LessThanOrEqual`    | `v1 <= v2` |
 
 A comparator that throws is treated as a failed condition.
 
@@ -116,11 +116,11 @@ value1 = {
 }
 ```
 
-| Field | Behavior |
-| --- | --- |
-| `unpackParams = true` | `callBack(table.unpack(resolved))`. The resolved value must be an array. |
-| `unpackParams = false` or omitted | `callBack(resolved)` |
-| `returnIndex = n` | After the callback (or without one), pick index `n` from an array result |
+| Field                             | Behavior                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------ |
+| `unpackParams = true`             | `callBack(table.unpack(resolved))`. The resolved value must be an array. |
+| `unpackParams = false` or omitted | `callBack(resolved)`                                                     |
+| `returnIndex = n`                 | After the callback (or without one), pick index `n` from an array result |
 
 Unknown param types and invalid callback setup call `Logger:error` and throw.
 

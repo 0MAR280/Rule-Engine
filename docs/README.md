@@ -6,16 +6,16 @@ The engine lives in [`src/shared/Modules/RuleEngine`](../src/shared/Modules/Rule
 
 ## Contents
 
-| Doc | What it covers |
-| --- | --- |
-| [Engine](Engine.md) | Public API, run order, context, return values, rollback |
-| [Rules](Rules.md) | `RuleData`, `Condition`, `Reward`, `Value`, `Param`, and enums |
-| [Conditions](Conditions.md) | How conditions are solved, operators, params, callbacks, payload |
-| [SolveParam](SolveParam.md) | Data/cache adapter; update this when the host services move |
-| [Rewards](Rewards.md) | Reward operations, signal contract, builders, samples |
-| [Architecture](Architecture.md) | Helpers, CommsHub, Data/Cache services, paths |
-| [Testing](Testing.md) | Specs, the test place, and how to read results |
-| [Extending](Extending.md) | Adding a condition operator or a reward case |
+| Doc                             | What it covers                                                   |
+| ------------------------------- | ---------------------------------------------------------------- |
+| [Engine](Engine.md)             | Public API, run order, context, return values, rollback          |
+| [Rules](Rules.md)               | `RuleData`, `Condition`, `Reward`, `Value`, `Param`, and enums   |
+| [Conditions](Conditions.md)     | How conditions are solved, operators, params, callbacks, payload |
+| [SolveParam](SolveParam.md)     | Data/cache adapter; update this when the host services move      |
+| [Rewards](Rewards.md)           | Reward operations, signal contract, builders, samples            |
+| [Architecture](Architecture.md) | Helpers, CommsHub, Data/Cache services, paths                    |
+| [Testing](Testing.md)           | Specs, the test place, and how to read results                   |
+| [Extending](Extending.md)       | Adding a condition operator or a reward case                     |
 
 ## Quick start
 
@@ -23,7 +23,7 @@ The engine lives in [`src/shared/Modules/RuleEngine`](../src/shared/Modules/Rule
 local RuleEngine = require(Modules.RuleEngine)
 local ENUMS = require(Modules.Data.ENUMS)
 
-local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.excuteRule(player, {
+local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.executeRule(player, {
     context = ENUMS.ContextTypes.Server,
     conditions = {
         {
@@ -46,4 +46,4 @@ local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.excute
 })
 ```
 
-The public entry is spelled `excuteRule`.
+The public entry is spelled `executeRule`.

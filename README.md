@@ -10,19 +10,19 @@ This repository packages the engine with a small Roblox place so it can be run a
 
 ## Where the engine lives
 
-| Path | What it is |
-| --- | --- |
-| [`src/shared/Modules/RuleEngine`](src/shared/Modules/RuleEngine) | Engine entry, helpers, reward cases, and specs |
-| [`src/shared/Modules/Math/ConditionCases`](src/shared/Modules/Math/ConditionCases) | Condition comparators |
+| Path                                                                                                             | What it is                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| [`src/shared/Modules/RuleEngine`](src/shared/Modules/RuleEngine)                                                 | Engine entry, helpers, reward cases, and specs                                                          |
+| [`src/shared/Modules/Math/ConditionCases`](src/shared/Modules/Math/ConditionCases)                               | Condition comparators                                                                                   |
 | [`src/shared/Modules/RuleEngine/Helpers/SolveParam.luau`](src/shared/Modules/RuleEngine/Helpers/SolveParam.luau) | Data/cache adapter. Update this when host services move. See [`docs/SolveParam.md`](docs/SolveParam.md) |
-| [`src/shared/Modules/Types/Types.luau`](src/shared/Modules/Types/Types.luau) | Shared types |
-| [`src/shared/Modules/Data/Rewards`](src/shared/Modules/Data/Rewards) | Sample rewards used by the test place |
+| [`src/shared/Modules/Types/Types.luau`](src/shared/Modules/Types/Types.luau)                                     | Shared types                                                                                            |
+| [`src/shared/Modules/Data/Rewards`](src/shared/Modules/Data/Rewards)                                             | Sample rewards used by the test place                                                                   |
 
 Everything else in this repo is environment setup (services, UI, Rojo/Wally config).
 
 ## How a rule runs
 
-`RuleEngine.excuteRule(player, rule, payload?)` is the public entry (that spelling is intentional).
+`RuleEngine.executeRule(player, rule, payload?)` is the public entry (that spelling is intentional).
 
 1. **Context** — `Server`, `Client`, or `Both` must match the current runtime.
 2. **Conditions** — solved in order. The first failure returns its `onFalse` message. Rewards are not applied.
@@ -48,12 +48,12 @@ If `rollbackRewards` is missing, `applyRollback` still reports success. Define m
 
 ## Public API
 
-| Function | Returns | Role |
-| --- | --- | --- |
-| `excuteRule(player, rule, payload?)` | `conditionsPassed, rewardsApplied, rollbackApplied, err` | Full run |
-| `checkConditions(player, rule, payload?)` | `ok, err` | Context and conditions only |
-| `applyRewards(player, rule)` | `ok, err, failureIndex` | Rewards only |
-| `applyRollback(player, rule, failureIndex?)` | `ok, err, failureIndex` | Rollback only |
+| Function                                     | Returns                                                  | Role                        |
+| -------------------------------------------- | -------------------------------------------------------- | --------------------------- |
+| `executeRule(player, rule, payload?)`        | `conditionsPassed, rewardsApplied, rollbackApplied, err` | Full run                    |
+| `checkConditions(player, rule, payload?)`    | `ok, err`                                                | Context and conditions only |
+| `applyRewards(player, rule)`                 | `ok, err, failureIndex`                                  | Rewards only                |
+| `applyRollback(player, rule, failureIndex?)` | `ok, err, failureIndex`                                  | Rollback only               |
 
 `rollbackApplied` is `true` if rollback ran and succeeded, `false` if it ran and failed, `nil` if it was not needed.
 
@@ -64,7 +64,7 @@ If `rollbackRewards` is missing, `applyRollback` still reports success. Define m
 Callers get a short `err`. Details stay in the log.
 
 - Condition `onFalse` (and function-condition reasons) are returned as-is (`"Not Enough points!"`).
-- Reward and rollback failures from `excuteRule` return `"Somthing went wrong!"`.
+- Reward and rollback failures from `executeRule` return `"Something went wrong!"`.
 - `ApplyReward` returns `"A mal reward format"` or `"A runtime error"` for a bad handler.
 
 ## Operators
@@ -86,7 +86,7 @@ local PATHS = require(Modules.Data.PATHS)
 local dataSignal = PATHS.signals.dataService.server.updatePlayerData
 local cacheSignal = PATHS.signals.cacheService.server.updatePlayerData
 
-local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.excuteRule(player, {
+local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.executeRule(player, {
     context = ENUMS.ContextTypes.Server,
     conditions = {
         {
@@ -142,7 +142,7 @@ See [`src/shared/Modules/Data/Rewards`](src/shared/Modules/Data/Rewards). Number
 
 Sample [`6.luau`](src/shared/Modules/Data/Rewards/6.luau) is the rollback demo: grant coins and points, fail on purpose, then reverse both grants.
 
-In the test place, touching a colored part runs `excuteRule` against that sample.
+In the test place, touching a colored part runs `executeRule` against that sample.
 
 ## Running the test place
 

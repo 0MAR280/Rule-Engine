@@ -34,7 +34,7 @@ local fnSolveAllConditions = require(Helpers.SolveAllConditions)
 
 -- Variables
 local currentContext: ContextType = RunService:IsServer() and ENUMS.ContextTypes.Server or ENUMS.ContextTypes.Client
-local failureMessage = "Somthing went wrong!"
+local failureMessage = "Something went wrong!"
 
 -- Functions
 -- Private
@@ -75,12 +75,12 @@ local RuleEngine = {}
     @return boolean - Wether the rollback was successfull (In case of rewards failure only)
 	@return string? - Error message in case of failure
 ]=]
-function RuleEngine.excuteRule(
+function RuleEngine.executeRule(
 	player: Player,
 	rule: RuleData,
 	payload: { [string]: any }?
 ): (boolean, boolean, boolean?, string?)
-	local fn = `excuteRule`
+	local fn = `executeRule`
 
 	if not fnCheckContext(rule.context) then
 		local msg = `{fn}: Context mismatch. Expected: {rule.context} Current: {currentContext}`

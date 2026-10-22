@@ -38,12 +38,12 @@ solveParam(player: Player, param: Param, payload: { [string]: any }?) -> any
 
 ## Param sources
 
-| `param.type` | Uses | Result |
-| --- | --- | --- |
-| `DataPath` | `param.path` | Player data from `DataService` |
-| `CachePath` | `param.path` | Session cache from `CacheService` |
-| `Value` | `param.value` | The literal |
-| `Now` | | `os.time()` |
+| `param.type`   | Uses                    | Result                                  |
+| -------------- | ----------------------- | --------------------------------------- |
+| `DataPath`     | `param.path`            | Player data from `DataService`          |
+| `CachePath`    | `param.path`            | Session cache from `CacheService`       |
+| `Value`        | `param.value`           | The literal                             |
+| `Now`          |                         | `os.time()`                             |
 | `EventPayload` | `param.path`, `payload` | A field walked inside the event payload |
 
 Unknown `type` calls `Logger:error` and throws.
@@ -74,10 +74,10 @@ In this repo those modules are [`src/shared/Services/DataService.luau`](../src/s
 
 ### API the engine expects
 
-| Context | Module | Function |
-| --- | --- | --- |
-| Server | DataService, CacheService | `getPlayerData(player, path) -> any` |
-| Client | DataService, CacheService | `getData(path) -> any` |
+| Context | Module                    | Function                             |
+| ------- | ------------------------- | ------------------------------------ |
+| Server  | DataService, CacheService | `getPlayerData(player, path) -> any` |
+| Client  | DataService, CacheService | `getData(path) -> any`               |
 
 This place’s implementations walk `path` on the player instance and return a `NumberValue.Value`, or `nil` if the instance is missing.
 
@@ -98,7 +98,7 @@ Do not assume “the engine will find my service.” It will not. Only this file
 
 ## What breaks if you skip it
 
-A condition such as `{ param = BALANCES.points }` never reads the player. `require` errors, or `getPlayerData` is missing, so `SolveConditionValue` throws. `excuteRule` treats that as a condition failure.
+A condition such as `{ param = BALANCES.points }` never reads the player. `require` errors, or `getPlayerData` is missing, so `SolveConditionValue` throws. `executeRule` treats that as a condition failure.
 
 A reward `value` that is `{ param = ... }` fails the same way inside `ApplyReward`.
 
@@ -119,7 +119,7 @@ Ready-made params in [`BALANCES.luau`](../src/shared/Modules/Data/BALANCES.luau)
 -- Clock (no service)
 { type = ENUMS.ParamOpTypes.Now }
 
--- Event payload passed to excuteRule / checkConditions
+-- Event payload passed to executeRule / checkConditions
 { type = ENUMS.ParamOpTypes.EventPayload, path = { "amount" } }
 ```
 

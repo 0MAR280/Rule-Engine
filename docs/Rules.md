@@ -17,12 +17,12 @@ Use the enum tables. Do not hard-code the numeric values in new rules.
 }
 ```
 
-| Field | Required | Notes |
-| --- | --- | --- |
-| `context` | usually | `ENUMS.ContextTypes.Server`, `.Client`, or `.Both`. `nil` is allowed. |
-| `conditions` | no | Missing or `{}` passes. |
-| `rewards` | no | Missing or `{}` succeeds. |
-| `rollbackRewards` | no | Used when a list reward after the first fails. |
+| Field             | Required | Notes                                                                 |
+| ----------------- | -------- | --------------------------------------------------------------------- |
+| `context`         | usually  | `ENUMS.ContextTypes.Server`, `.Client`, or `.Both`. `nil` is allowed. |
+| `conditions`      | no       | Missing or `{}` passes.                                               |
+| `rewards`         | no       | Missing or `{}` succeeds.                                             |
+| `rollbackRewards` | no       | Used when a list reward after the first fails.                        |
 
 A list must be a sequential array. A dictionary such as `{ name = "x" }` is rejected.
 
@@ -38,12 +38,12 @@ A list must be a sequential array. A dictionary such as `{ name = "x" }` is reje
 }
 ```
 
-| Field | Meaning |
-| --- | --- |
-| `name` | Shown in logs and in the default failure message |
-| `value1`, `value2` | Literals, or `{ param = Param, ... }` tables resolved at runtime |
-| `opType` | A `ENUMS.ConditionOpTypes` value |
-| `onFalse` | Returned when this condition fails. If omitted, the message is `Condition "{name}" is not met` |
+| Field              | Meaning                                                                                        |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| `name`             | Shown in logs and in the default failure message                                               |
+| `value1`, `value2` | Literals, or `{ param = Param, ... }` tables resolved at runtime                               |
+| `opType`           | A `ENUMS.ConditionOpTypes` value                                                               |
+| `onFalse`          | Returned when this condition fails. If omitted, the message is `Condition "{name}" is not met` |
 
 Conditions run in order. The first failure stops the rest.
 
@@ -60,14 +60,14 @@ Conditions run in order. The first failure stops the rest.
 }
 ```
 
-| Field | Meaning |
-| --- | --- |
-| `name` | Shown in logs |
-| `opType` | A `ENUMS.RewardOpTypes` value |
-| `value` | Literal, or a `{ param = Param }` table resolved before the case runs. Increment and Decrement require a number. |
-| `path` | Path from `CommsHub` to the signal name |
-| `params` | Sequential array. For Increment, Decrement, and Set, `params[1]` is the target value path. Remaining entries are forwarded to the signal. |
-| `unpackParams` | When true, extra params are sent with `table.unpack`. When false or omitted, they are sent as a table. |
+| Field          | Meaning                                                                                                                                   |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`         | Shown in logs                                                                                                                             |
+| `opType`       | A `ENUMS.RewardOpTypes` value                                                                                                             |
+| `value`        | Literal, or a `{ param = Param }` table resolved before the case runs. Increment and Decrement require a number.                          |
+| `path`         | Path from `CommsHub` to the signal name                                                                                                   |
+| `params`       | Sequential array. For Increment, Decrement, and Set, `params[1]` is the target value path. Remaining entries are forwarded to the signal. |
+| `unpackParams` | When true, extra params are sent with `table.unpack`. When false or omitted, they are sent as a table.                                    |
 
 The engine deep-copies each reward before applying it, so `table.remove` on `params` does not mutate the original rule.
 
@@ -96,13 +96,13 @@ If the table has a `param` field, the engine resolves it through `SolveParam`, t
 }
 ```
 
-| `type` | Fields used | Result |
-| --- | --- | --- |
-| `DataPath` | `path` | Player data at that path (`DataService`). Resolved in [SolveParam](SolveParam.md) |
-| `CachePath` | `path` | Session cache at that path (`CacheService`). Resolved in [SolveParam](SolveParam.md) |
-| `Value` | `value` | The literal `value` |
-| `Now` | | `os.time()` |
-| `EventPayload` | `path` | A field walked inside the `payload` table passed to `excuteRule` / `checkConditions` |
+| `type`         | Fields used | Result                                                                                |
+| -------------- | ----------- | ------------------------------------------------------------------------------------- |
+| `DataPath`     | `path`      | Player data at that path (`DataService`). Resolved in [SolveParam](SolveParam.md)     |
+| `CachePath`    | `path`      | Session cache at that path (`CacheService`). Resolved in [SolveParam](SolveParam.md)  |
+| `Value`        | `value`     | The literal `value`                                                                   |
+| `Now`          |             | `os.time()`                                                                           |
+| `EventPayload` | `path`      | A field walked inside the `payload` table passed to `executeRule` / `checkConditions` |
 
 ## `Path`
 
@@ -120,41 +120,41 @@ Signal paths are resolved on `CommsHub`. Data and cache paths are resolved on th
 
 ### Context
 
-| Name | Value |
-| --- | --- |
-| `ENUMS.ContextTypes.Server` | `1` |
-| `ENUMS.ContextTypes.Client` | `2` |
-| `ENUMS.ContextTypes.Both` | `3` |
+| Name                        | Value |
+| --------------------------- | ----- |
+| `ENUMS.ContextTypes.Server` | `1`   |
+| `ENUMS.ContextTypes.Client` | `2`   |
+| `ENUMS.ContextTypes.Both`   | `3`   |
 
 ### Condition operators
 
-| Name | Value | Compare |
-| --- | --- | --- |
-| `Equal` | `1` | `==` |
-| `NotEqual` | `2` | `~=` |
-| `GreaterThanOrEqual` | `3` | `>=` |
-| `GreaterThan` | `4` | `>` |
-| `LessThanOrEqual` | `5` | `<=` |
-| `LessThan` | `6` | `<` |
+| Name                 | Value | Compare |
+| -------------------- | ----- | ------- |
+| `Equal`              | `1`   | `==`    |
+| `NotEqual`           | `2`   | `~=`    |
+| `GreaterThanOrEqual` | `3`   | `>=`    |
+| `GreaterThan`        | `4`   | `>`     |
+| `LessThanOrEqual`    | `5`   | `<=`    |
+| `LessThan`           | `6`   | `<`     |
 
 ### Reward operators
 
-| Name | Value |
-| --- | --- |
-| `Increment` | `1` |
-| `Decrement` | `2` |
-| `Set` | `3` |
-| `FireSignal` | `4` |
+| Name         | Value |
+| ------------ | ----- |
+| `Increment`  | `1`   |
+| `Decrement`  | `2`   |
+| `Set`        | `3`   |
+| `FireSignal` | `4`   |
 
 ### Param sources
 
-| Name | Value |
-| --- | --- |
-| `DataPath` | `1` |
-| `CachePath` | `2` |
-| `Value` | `3` |
-| `Now` | `4` |
-| `EventPayload` | `5` |
+| Name           | Value |
+| -------------- | ----- |
+| `DataPath`     | `1`   |
+| `CachePath`    | `2`   |
+| `Value`        | `3`   |
+| `Now`          | `4`   |
+| `EventPayload` | `5`   |
 
 ## `GameReward`
 

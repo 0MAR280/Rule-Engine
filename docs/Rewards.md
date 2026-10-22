@@ -88,31 +88,31 @@ signal(player, params)
 
 `_Shared.luau` builds the common place patterns. Paths come from `PATHS.userData` (persisted coins) and `PATHS.userCache` (session points / playtime).
 
-| Builder | Op | Writes |
-| --- | --- | --- |
-| `Shared.reward(currency, amount, path)` | Increment | `userData[currency]` |
-| `Shared.cacheReward(currency, amount, path)` | Increment | `userCache[currency]` |
-| `Shared.payment(currency, amount, path)` | Decrement | `userData[currency]` |
-| `Shared.cachePayment(currency, amount, path)` | Decrement | `userCache[currency]` |
-| `Shared.set(currency, value, path)` | Set | `userData[currency]` |
-| `Shared.cacheSet(currency, value, path)` | Set | `userCache[currency]` |
-| `Shared.fireSignal(name, path, params, unpackParams)` | FireSignal | none |
-| `Shared.balanceRule(currency, price, rewards)` | | Server rule: `balance >= price`, then `rewards` |
+| Builder                                               | Op         | Writes                                          |
+| ----------------------------------------------------- | ---------- | ----------------------------------------------- |
+| `Shared.reward(currency, amount, path)`               | Increment  | `userData[currency]`                            |
+| `Shared.cacheReward(currency, amount, path)`          | Increment  | `userCache[currency]`                           |
+| `Shared.payment(currency, amount, path)`              | Decrement  | `userData[currency]`                            |
+| `Shared.cachePayment(currency, amount, path)`         | Decrement  | `userCache[currency]`                           |
+| `Shared.set(currency, value, path)`                   | Set        | `userData[currency]`                            |
+| `Shared.cacheSet(currency, value, path)`              | Set        | `userCache[currency]`                           |
+| `Shared.fireSignal(name, path, params, unpackParams)` | FireSignal | none                                            |
+| `Shared.balanceRule(currency, price, rewards)`        |            | Server rule: `balance >= price`, then `rewards` |
 
 Pass the matching signal path: `updatePlayerData` for increment/decrement, `setPlayerData` for set.
 
 ## Samples
 
-`RewardService` spawns one anchored part per sample. Touching it runs `excuteRule` for that `ruleData`.
+`RewardService` spawns one anchored part per sample. Touching it runs `executeRule` for that `ruleData`.
 
-| Sample | Case | What it does |
-| --- | --- | --- |
-| [`1.luau`](../src/shared/Modules/Data/Rewards/1.luau) | Increment + Decrement | Trade 10 points for 5 coins |
-| [`2.luau`](../src/shared/Modules/Data/Rewards/2.luau) | Set | Set coins to 50 if they are not already 50 |
-| [`3.luau`](../src/shared/Modules/Data/Rewards/3.luau) | Increment | Grant 15 coins while under 100 |
-| [`4.luau`](../src/shared/Modules/Data/Rewards/4.luau) | FireSignal | Charge 10 coins and 10 points, then give a sword |
-| [`5.luau`](../src/shared/Modules/Data/Rewards/5.luau) | Decrement | Spend 10 points when points are greater than 10 |
-| [`6.luau`](../src/shared/Modules/Data/Rewards/6.luau) | Rollback | Grant 25 coins and 10 points, fail on purpose, then roll both back |
+| Sample                                                | Case                  | What it does                                                       |
+| ----------------------------------------------------- | --------------------- | ------------------------------------------------------------------ |
+| [`1.luau`](../src/shared/Modules/Data/Rewards/1.luau) | Increment + Decrement | Trade 10 points for 5 coins                                        |
+| [`2.luau`](../src/shared/Modules/Data/Rewards/2.luau) | Set                   | Set coins to 50 if they are not already 50                         |
+| [`3.luau`](../src/shared/Modules/Data/Rewards/3.luau) | Increment             | Grant 15 coins while under 100                                     |
+| [`4.luau`](../src/shared/Modules/Data/Rewards/4.luau) | FireSignal            | Charge 10 coins and 10 points, then give a sword                   |
+| [`5.luau`](../src/shared/Modules/Data/Rewards/5.luau) | Decrement             | Spend 10 points when points are greater than 10                    |
+| [`6.luau`](../src/shared/Modules/Data/Rewards/6.luau) | Rollback              | Grant 25 coins and 10 points, fail on purpose, then roll both back |
 
 ## Example
 

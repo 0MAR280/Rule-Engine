@@ -3,7 +3,7 @@
 The Rule Engine is a shared Luau module. The rest of this repository is a small Roblox place that hosts it: data, cache, tools, sample parts, and tests.
 
 ```text
-excuteRule
+executeRule
   ├─ CheckContext
   ├─ checkConditions
   │    └─ SolveAllConditions → SolveCondition → SolveConditionValue → SolveParam
@@ -17,35 +17,35 @@ excuteRule
 
 ## Layout
 
-| Path | Role |
-| --- | --- |
-| `src/shared/Modules/RuleEngine` | Engine entry, helpers, reward cases, tests |
-| `src/shared/Modules/Math/ConditionCases` | Condition comparators |
-| `src/shared/Modules/Types/Types.luau` | Shared types |
-| `src/shared/Modules/Data/ENUMS.luau` | Context, param, condition, and reward enums |
-| `src/shared/Modules/Data/PATHS.luau` | Data, cache, and signal paths |
-| `src/shared/Modules/Data/BALANCES.luau` | Ready-made params for coins, points, playtime |
-| `src/shared/Modules/Data/Rewards` | Sample `GameReward` modules |
-| `src/shared/Modules/Core/CommsHub.luau` | Signal name tree |
-| `src/shared/Modules/Core/SignalManager.luau` | Named signals |
-| `ServerServices/DataService.luau` | Server coins (`leaderstats.Coins`) |
-| `ServerServices/CacheService.luau` | Server points and playtime (`SessionStats`) |
-| `ServerServices/ToolService.luau` | `giveTool` listener |
-| `ServerServices/RewardService.luau` | Sample parts that call `excuteRule` |
-| `ServerServices/TestService.luau` | Runs the engine specs on boot |
+| Path                                         | Role                                          |
+| -------------------------------------------- | --------------------------------------------- |
+| `src/shared/Modules/RuleEngine`              | Engine entry, helpers, reward cases, tests    |
+| `src/shared/Modules/Math/ConditionCases`     | Condition comparators                         |
+| `src/shared/Modules/Types/Types.luau`        | Shared types                                  |
+| `src/shared/Modules/Data/ENUMS.luau`         | Context, param, condition, and reward enums   |
+| `src/shared/Modules/Data/PATHS.luau`         | Data, cache, and signal paths                 |
+| `src/shared/Modules/Data/BALANCES.luau`      | Ready-made params for coins, points, playtime |
+| `src/shared/Modules/Data/Rewards`            | Sample `GameReward` modules                   |
+| `src/shared/Modules/Core/CommsHub.luau`      | Signal name tree                              |
+| `src/shared/Modules/Core/SignalManager.luau` | Named signals                                 |
+| `ServerServices/DataService.luau`            | Server coins (`leaderstats.Coins`)            |
+| `ServerServices/CacheService.luau`           | Server points and playtime (`SessionStats`)   |
+| `ServerServices/ToolService.luau`            | `giveTool` listener                           |
+| `ServerServices/RewardService.luau`          | Sample parts that call `executeRule`          |
+| `ServerServices/TestService.luau`            | Runs the engine specs on boot                 |
 
 ## Helpers
 
-| Helper | Job |
-| --- | --- |
-| `CheckContext` | Compare `rule.context` to the current runtime |
-| `SolveAllConditions` | First-failing condition wins |
-| `SolveCondition` | Resolve values, run a comparator |
-| `SolveConditionValue` | Literal vs `{ param }`, callbacks, `returnIndex` |
-| `SolveParam` | DataPath, CachePath, Value, Now, EventPayload. Host Data/Cache requires live here; see [SolveParam.md](SolveParam.md) |
-| `WalkPayload` | Walk a payload table by path; fail closed to `nil` |
-| `ApplyReward` | Resolve dynamic `value`, dispatch to a reward case |
-| `ApplyRewards` | Apply a list, optional `stopIndex` |
+| Helper                | Job                                                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `CheckContext`        | Compare `rule.context` to the current runtime                                                                         |
+| `SolveAllConditions`  | First-failing condition wins                                                                                          |
+| `SolveCondition`      | Resolve values, run a comparator                                                                                      |
+| `SolveConditionValue` | Literal vs `{ param }`, callbacks, `returnIndex`                                                                      |
+| `SolveParam`          | DataPath, CachePath, Value, Now, EventPayload. Host Data/Cache requires live here; see [SolveParam.md](SolveParam.md) |
+| `WalkPayload`         | Walk a payload table by path; fail closed to `nil`                                                                    |
+| `ApplyReward`         | Resolve dynamic `value`, dispatch to a reward case                                                                    |
+| `ApplyRewards`        | Apply a list, optional `stopIndex`                                                                                    |
 
 ## Signals
 

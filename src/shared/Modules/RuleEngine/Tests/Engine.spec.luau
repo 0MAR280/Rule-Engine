@@ -21,7 +21,7 @@ local dataUpdateSignal = PATHS.signals.dataService.server.updatePlayerData
 return function(it: ItFn, expect: ExpectFn): ()
 	it("passes a rule with no conditions and no rewards", function()
 		local player = Harness.makePlayer()
-		local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.excuteRule(player, {
+		local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.executeRule(player, {
 			context = ENUMS.ContextTypes.Server,
 		})
 
@@ -34,7 +34,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 
 	it("passes a rule with empty condition and reward lists", function()
 		local player = Harness.makePlayer()
-		local conditionsPassed, rewardsApplied = RuleEngine.excuteRule(player, {
+		local conditionsPassed, rewardsApplied = RuleEngine.executeRule(player, {
 			context = ENUMS.ContextTypes.Server,
 			conditions = {},
 			rewards = {},
@@ -47,7 +47,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 
 	it("passes Both context on the server", function()
 		local player = Harness.makePlayer()
-		local conditionsPassed, rewardsApplied = RuleEngine.excuteRule(player, {
+		local conditionsPassed, rewardsApplied = RuleEngine.executeRule(player, {
 			context = ENUMS.ContextTypes.Both,
 		})
 
@@ -58,7 +58,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 
 	it("rejects Client context on the server", function()
 		local player = Harness.makePlayer()
-		local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.excuteRule(player, {
+		local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.executeRule(player, {
 			context = ENUMS.ContextTypes.Client,
 			conditions = {
 				{
@@ -80,7 +80,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 	it("applies function rewards when function conditions pass", function()
 		local player = Harness.makePlayer()
 		local rewarded = false
-		local conditionsPassed, rewardsApplied = RuleEngine.excuteRule(player, {
+		local conditionsPassed, rewardsApplied = RuleEngine.executeRule(player, {
 			context = ENUMS.ContextTypes.Server,
 			conditions = function(_player: Player): (boolean, string?)
 				return true, nil
@@ -100,7 +100,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 	it("does not apply rewards when function conditions fail", function()
 		local player = Harness.makePlayer()
 		local rewarded = false
-		local conditionsPassed, rewardsApplied, _, err = RuleEngine.excuteRule(player, {
+		local conditionsPassed, rewardsApplied, _, err = RuleEngine.executeRule(player, {
 			context = ENUMS.ContextTypes.Server,
 			conditions = function(_player: Player): (boolean, string?)
 				return false, "nope"
@@ -120,7 +120,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 
 	it("returns a runtime error when function conditions throw", function()
 		local player = Harness.makePlayer()
-		local conditionsPassed, rewardsApplied, _, err = RuleEngine.excuteRule(player, {
+		local conditionsPassed, rewardsApplied, _, err = RuleEngine.executeRule(player, {
 			context = ENUMS.ContextTypes.Server,
 			conditions = function(_player: Player): (boolean, string?)
 				error("condition boom")
@@ -173,7 +173,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 
 	it("rolls back applied rewards when a later reward fails", function()
 		local player = Harness.makePlayer({ coins = 5 })
-		local conditionsPassed, rewardsApplied, rollbackApplied = RuleEngine.excuteRule(player, {
+		local conditionsPassed, rewardsApplied, rollbackApplied = RuleEngine.executeRule(player, {
 			context = ENUMS.ContextTypes.Server,
 			rewards = {
 				SharedRewards.reward("coins", 10, dataUpdateSignal),
@@ -200,7 +200,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 	it("does not roll back when the first reward is the one that fails", function()
 		local player = Harness.makePlayer({ coins = 5 })
 		local rolledBack = false
-		local conditionsPassed, rewardsApplied, rollbackApplied = RuleEngine.excuteRule(player, {
+		local conditionsPassed, rewardsApplied, rollbackApplied = RuleEngine.executeRule(player, {
 			context = ENUMS.ContextTypes.Server,
 			rewards = {
 				{
@@ -227,7 +227,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 
 	it("treats a missing rollback list as a successful rollback", function()
 		local player = Harness.makePlayer({ coins = 5 })
-		local conditionsPassed, rewardsApplied, rollbackApplied = RuleEngine.excuteRule(player, {
+		local conditionsPassed, rewardsApplied, rollbackApplied = RuleEngine.executeRule(player, {
 			context = ENUMS.ContextTypes.Server,
 			rewards = {
 				SharedRewards.reward("coins", 10, dataUpdateSignal),
@@ -250,7 +250,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 
 	it("fails rollback when the rollback function returns false", function()
 		local player = Harness.makePlayer({ coins = 5 })
-		local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.excuteRule(player, {
+		local conditionsPassed, rewardsApplied, rollbackApplied, err = RuleEngine.executeRule(player, {
 			context = ENUMS.ContextTypes.Server,
 			rewards = {
 				SharedRewards.reward("coins", 10, dataUpdateSignal),
@@ -270,7 +270,7 @@ return function(it: ItFn, expect: ExpectFn): ()
 		expect(conditionsPassed).toBeTrue()
 		expect(rewardsApplied).toBeFalse()
 		expect(rollbackApplied).toBeFalse()
-		expect(err).toBe("Somthing went wrong!")
+		expect(err).toBe("Something went wrong!")
 		expect(Harness.getCoins(player)).toBe(15)
 		player:Destroy()
 	end)

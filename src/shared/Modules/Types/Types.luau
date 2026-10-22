@@ -46,7 +46,7 @@ export type Signal = {
 
 -- Rule Engine Types
 export type RuleEngine = {
-	excuteRule: (player: Player, rule: RuleData) -> (boolean, boolean, boolean?, string?),
+	executeRule: (player: Player, rule: RuleData) -> (boolean, boolean, boolean?, string?),
 	applyRollback: (player: Player, rule: RuleData) -> (boolean, string?, number?),
 	applyRewards: (player: Player, rule: RuleData) -> (boolean, string?, number?),
 	checkConditions: (player: Player, rule: RuleData) -> (boolean, string?),

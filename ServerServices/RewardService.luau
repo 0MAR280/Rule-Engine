@@ -51,7 +51,7 @@ function Private.setupRewardPart(part: BasePart, reward: GameReward): ()
 
 		if player then
 			local conditionsPassed, rewardsApplied, rollbackApplied, err =
-				RuleEngine.excuteRule(player, reward.ruleData)
+				RuleEngine.executeRule(player, reward.ruleData)
 
 			if not conditionsPassed then
 				local msg1 = `{fn}: Conditions were not satisfied!`
